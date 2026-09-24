@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
         StreamResolver.init(applicationContext)
         LocalLibraryStore.init(applicationContext)
         DownloadManager.init(applicationContext)
+        com.spotywoop.kt.data.AppUpdateManager.checkForUpdates(silent = true)
         setContent {
             SpotywoopTheme {
                 App()
