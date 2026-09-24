@@ -51,10 +51,19 @@ object TubidySource {
                 return null
             }
             val videoId = watchMatcher.group(1) ?: return null
+            resolveWithWatchId(videoId)
+        } catch (e: Exception) {
+            Log.w(TAG, "Échec Tubidy pour '$query': ${e.message}")
+            null
+        }
+    }
 
+    fun resolveWithWatchId(videoId: String): ResolvedStream? {
+        if (videoId.isBlank()) return null
+        return try {
             // Format MP3 Audio (lnk=6)
             val formatUrl = "$BASE_URL/watch.php?id=$videoId&p=mp4&t=ssl&act=down&lnk=6"
-            Log.d(TAG, "Récupération format MP3 Tubidy: $formatUrl")
+            Log.d(TAG, "Récupération format MP3 Tubidy pour ID $videoId: $formatUrl")
 
             val formatReq = Request.Builder()
                 .url(formatUrl)
@@ -69,7 +78,7 @@ object TubidySource {
 
             val d2meMatcher = D2ME_REGEX.matcher(formatHtml)
             if (!d2meMatcher.find()) {
-                Log.d(TAG, "Lien direct d2mefast non prêt pour '$query' (conversion requise ou indisponible)")
+                Log.d(TAG, "Lien direct d2mefast non prêt pour ID $videoId")
                 return null
             }
 
@@ -82,11 +91,12 @@ object TubidySource {
                 quality = "MP3 Direct (Ultra-rapide)",
                 headers = mapOf(
                     "User-Agent" to USER_AGENT,
-                    "Referer" to "$BASE_URL/"
+                    "Referer" to "$BASE_URL/",
+                    "X-Tubidy-Id" to videoId,
                 )
             )
         } catch (e: Exception) {
-            Log.w(TAG, "Échec Tubidy pour '$query': ${e.message}")
+            Log.w(TAG, "Échec Tubidy direct pour ID $videoId: ${e.message}")
             null
         }
     }

@@ -33,10 +33,10 @@ data class UpdateInfo(
 sealed interface UpdateStatus {
     object Idle : UpdateStatus
     object Checking : UpdateStatus
-    data class Available(val info: UpdateInfo) : UpdateStatus
+    data class Available(val info: UpdateInfo, val previousWasObsolete: Boolean = false) : UpdateStatus
     data class UpToDate(val checkedAt: Long = System.currentTimeMillis()) : UpdateStatus
-    data class Downloading(val progress: Float, val downloadedBytes: Long, val totalBytes: Long) : UpdateStatus
-    data class ReadyToInstall(val apkFile: File) : UpdateStatus
+    data class Downloading(val progress: Float, val downloadedBytes: Long, val totalBytes: Long, val info: UpdateInfo? = null) : UpdateStatus
+    data class ReadyToInstall(val apkFile: File, val info: UpdateInfo? = null, val isLatest: Boolean = true) : UpdateStatus
     data class Error(val message: String) : UpdateStatus
 }
 
@@ -50,8 +50,25 @@ object AppUpdateManager {
         .readTimeout(60, TimeUnit.SECONDS)
         .build()
 
+    private var appContext: Context? = null
+
     private val _status = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
     val status: StateFlow<UpdateStatus> = _status.asStateFlow()
+
+    private val _promptDismissed = MutableStateFlow(false)
+    val promptDismissed: StateFlow<Boolean> = _promptDismissed.asStateFlow()
+
+    fun init(context: Context) {
+        appContext = context.applicationContext
+    }
+
+    fun dismissPrompt() {
+        _promptDismissed.value = true
+    }
+
+    fun showPromptAgain() {
+        _promptDismissed.value = false
+    }
 
     fun checkForUpdates(silent: Boolean = false) {
         if (_status.value is UpdateStatus.Checking || _status.value is UpdateStatus.Downloading) return
@@ -82,17 +99,41 @@ object AppUpdateManager {
                     val assets = obj.optJSONArray("assets") ?: org.json.JSONArray()
                     val targetAsset = selectBestAsset(assets)
                     if (targetAsset != null) {
-                        _status.value = UpdateStatus.Available(
-                            UpdateInfo(
-                                tagName = tagName,
-                                versionName = remoteVersion,
-                                title = title,
-                                changelog = changelog,
-                                downloadUrl = targetAsset.url,
-                                assetName = targetAsset.name,
-                                assetSize = targetAsset.size,
-                            )
+                        val info = UpdateInfo(
+                            tagName = tagName,
+                            versionName = remoteVersion,
+                            title = title,
+                            changelog = changelog,
+                            downloadUrl = targetAsset.url,
+                            assetName = targetAsset.name,
+                            assetSize = targetAsset.size,
                         )
+
+                        // Vérifier si un APK existe déjà dans le cache
+                        val ctx = appContext
+                        var previousWasObsolete = false
+                        if (ctx != null) {
+                            val updatesDir = File(ctx.cacheDir, "updates")
+                            if (updatesDir.exists()) {
+                                val targetFile = File(updatesDir, targetAsset.name)
+                                if (targetFile.exists() && targetFile.length() > 0) {
+                                    // Fichier déjà téléchargé et correspond à la toute dernière version !
+                                    android.util.Log.i("AppUpdateManager", "APK déjà présent et à jour: ${targetFile.name}")
+                                    _status.value = UpdateStatus.ReadyToInstall(targetFile, info, isLatest = true)
+                                    return@launch
+                                } else {
+                                    // Des fichiers APK d'anciennes versions existent ? Nettoyer
+                                    val oldApks = updatesDir.listFiles { f -> f.extension.equals("apk", ignoreCase = true) }
+                                    if (!oldApks.isNullOrEmpty()) {
+                                        android.util.Log.i("AppUpdateManager", "Suppression de ${oldApks.size} ancien(s) APK obsolète(s)")
+                                        oldApks.forEach { it.delete() }
+                                        previousWasObsolete = true
+                                    }
+                                }
+                            }
+                        }
+
+                        _status.value = UpdateStatus.Available(info, previousWasObsolete = previousWasObsolete)
                         return@launch
                     }
                 }
@@ -115,12 +156,17 @@ object AppUpdateManager {
         scope.launch {
             try {
                 val updatesDir = File(context.cacheDir, "updates").also { it.mkdirs() }
+                // Nettoyer tout ancien APK
+                updatesDir.listFiles { f -> f.extension.equals("apk", ignoreCase = true) }?.forEach { it.delete() }
+
                 val apkFile = File(updatesDir, info.assetName)
 
                 val req = Request.Builder()
                     .url(info.downloadUrl)
                     .header("User-Agent", "Spotywoop/${BuildConfig.VERSION_NAME}")
                     .build()
+
+                _status.value = UpdateStatus.Downloading(0f, 0L, info.assetSize, info)
 
                 http.newCall(req).execute().use { resp ->
                     if (!resp.isSuccessful) throw IOException("Échec téléchargement : HTTP ${resp.code}")
@@ -140,13 +186,13 @@ object AppUpdateManager {
                             if (totalBytes > 0 && now - lastEmit > 100) {
                                 lastEmit = now
                                 val prog = (downloaded.toFloat() / totalBytes).coerceIn(0f, 1f)
-                                _status.value = UpdateStatus.Downloading(prog, downloaded, totalBytes)
+                                _status.value = UpdateStatus.Downloading(prog, downloaded, totalBytes, info)
                             }
                         }
                     }
                 }
 
-                _status.value = UpdateStatus.ReadyToInstall(apkFile)
+                _status.value = UpdateStatus.ReadyToInstall(apkFile, info, isLatest = true)
 
                 withContext(Dispatchers.Main) {
                     launchInstaller(context, apkFile)

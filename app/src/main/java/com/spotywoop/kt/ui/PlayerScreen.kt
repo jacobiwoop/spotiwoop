@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -240,30 +241,31 @@ fun NowPlayingScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .padding(top = 56.dp) // Espace pour la barre sticky du haut
+                .padding(top = 46.dp) // Espace équilibré pour la barre sticky du haut
                 .navigationBarsPadding()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(2.dp))
 
-            // --- HERO COVER ART ---
+            // --- HERO COVER ART (0.92f pour libérer ~28dp tout en restant très grand et immersif) ---
             Cover(
                 url = now.cover,
                 size = null,
                 corner = 8.dp,
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(0.92f)
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(8.dp)),
             )
 
-            // --- LIGNE DE PAROLE EN DIRECT (TICKER AVEC ANIMATION SWIPE / SLIDE-FADE) ---
+            // --- LIGNE DE PAROLE EN DIRECT (TICKER EXTENSIBLE 1 À 3 LIGNES) ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
+                    .heightIn(min = 40.dp, max = 78.dp)
+                    .padding(vertical = 2.dp)
                     .clickable {
                         coroutineScope.launch {
                             scrollState.animateScrollTo(scrollState.maxValue)
@@ -285,9 +287,10 @@ fun NowPlayingScreen(
                         Text(
                             text = text,
                             color = Color.White,
-                            fontSize = 17.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1,
+                            lineHeight = 22.sp,
+                            maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
                         )
                     } else {
@@ -357,7 +360,7 @@ fun NowPlayingScreen(
                 )
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
 
             // --- SEEK BAR (SLIDER SPOTIFY) ---
             Slider(
@@ -395,7 +398,7 @@ fun NowPlayingScreen(
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
 
             // --- 5 COMMANDES PRINCIPALES SPOTIFY ---
             Row(
@@ -436,7 +439,7 @@ fun NowPlayingScreen(
                 )
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(8.dp))
 
             // --- LIGNE DISPOSITIF & UTILITAIRES ---
             Row(

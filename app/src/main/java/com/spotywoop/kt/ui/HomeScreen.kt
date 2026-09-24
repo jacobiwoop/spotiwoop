@@ -1,7 +1,9 @@
 package com.spotywoop.kt.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.res.painterResource
 import com.spotywoop.kt.R
@@ -28,12 +30,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.ui.platform.LocalContext
+import com.spotywoop.kt.data.AppUpdateManager
+import com.spotywoop.kt.data.UpdateStatus
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,6 +88,9 @@ fun HomeScreen(
             else -> "Bonsoir"
         }
     }
+
+    val updateStatus by AppUpdateManager.status.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     LazyColumn(
         modifier = modifier
@@ -133,6 +145,39 @@ fun HomeScreen(
                     )
                 }
             }
+        }
+
+        // Bannière dynamique de Mise à Jour (si disponible, prête ou en cours)
+        when (val s = updateStatus) {
+            is UpdateStatus.Available -> {
+                item(key = "update_banner") {
+                    UpdateBannerCard(
+                        title = "Mise à jour ${s.info.tagName} disponible",
+                        subtitle = if (s.previousWasObsolete) "Version précédente obsolète • Nouvelle version prête" else "Nouvelles fonctionnalités & améliorations",
+                        actionLabel = "Mettre à jour",
+                        badgeText = if (s.previousWasObsolete) "NOUVEAU" else null,
+                        onClick = onOpenSettings,
+                    )
+                }
+            }
+            is UpdateStatus.ReadyToInstall -> {
+                item(key = "update_banner") {
+                    UpdateBannerCard(
+                        title = "Mise à jour ${s.info?.tagName ?: ""} prête",
+                        subtitle = "Téléchargé • Dernière version",
+                        actionLabel = "Installer",
+                        badgeText = "PRÊT",
+                        badgeColor = SpotyColors.SpotifyGreen,
+                        onClick = { AppUpdateManager.launchInstaller(context, s.apkFile) },
+                    )
+                }
+            }
+            is UpdateStatus.Downloading -> {
+                item(key = "update_banner") {
+                    UpdateDownloadingCard(progress = s.progress)
+                }
+            }
+            else -> {}
         }
 
         // Filtres (Tout / Musique / Podcasts)
@@ -562,3 +607,131 @@ private fun GenreBadge(
         )
     }
 }
+
+@Composable
+private fun UpdateBannerCard(
+    title: String,
+    subtitle: String,
+    actionLabel: String,
+    badgeText: String? = null,
+    badgeColor: Color = SpotyColors.Gold,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(SpotyColors.SurfaceHigh)
+            .border(BorderStroke(1.dp, badgeColor.copy(alpha = 0.5f)), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(badgeColor.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.SystemUpdate,
+                contentDescription = null,
+                tint = badgeColor,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = title,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (badgeText != null) {
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = badgeText,
+                        color = Color.Black,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .background(badgeColor, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 5.dp, vertical = 1.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Button(
+            onClick = onClick,
+            colors = ButtonDefaults.buttonColors(containerColor = badgeColor),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.height(32.dp),
+        ) {
+            Text(
+                text = actionLabel,
+                color = Color.Black,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+@Composable
+private fun UpdateDownloadingCard(progress: Float) {
+    val pct = (progress * 100).toInt()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(SpotyColors.SurfaceHigh)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Téléchargement de la mise à jour...",
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                "$pct%",
+                color = SpotyColors.SpotifyGreen,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp)),
+            color = SpotyColors.SpotifyGreen,
+            trackColor = Color.DarkGray,
+        )
+    }
+}
+

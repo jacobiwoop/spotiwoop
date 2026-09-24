@@ -76,6 +76,7 @@ object StreamResolver {
     /** Appelé depuis PlaybackService.onCreate() et MainActivity.onCreate() avec le contexte application. */
     fun init(context: Context) {
         val appCtx = context.applicationContext
+        TrackIdCache.init(appCtx)
         localYtDlSource = LocalYoutubeDlSource(appCtx)
         // Pré-initialise youtubedl-android en tâche de fond pour ne pas bloquer le démarrage
         Thread {
@@ -114,6 +115,77 @@ object StreamResolver {
             "https://www.youtube.com/watch?v=${spotifyTrackId.removePrefix("yt:")}"
         } else {
             listOfNotNull(artist, title).joinToString(" ").trim()
+        }
+
+        // 1.5. Vérification du Cache d'IDs (Relance instantanée ~200ms sans recherche réseau)
+        val cachedIds = TrackIdCache.get(spotifyTrackId)
+        if (cachedIds != null && (cachedIds.youtubeId != null || cachedIds.tubidyWatchId != null)) {
+            val startFastMs = System.currentTimeMillis()
+            val cachedWinner: ResolvedStream? = try {
+                runBlocking(Dispatchers.IO) {
+                    val deferred = CompletableDeferred<ResolvedStream>()
+                    val activeSources = (if (cachedIds.tubidyWatchId != null) 1 else 0) + (if (cachedIds.youtubeId != null && localYtDlSource != null) 1 else 0)
+                    val failedSources = AtomicInteger(0)
+
+                    if (cachedIds.tubidyWatchId != null) {
+                        launch {
+                            try {
+                                val stream = TubidySource.resolveWithWatchId(cachedIds.tubidyWatchId)
+                                if (stream != null) {
+                                    if (deferred.complete(stream)) {
+                                        val dur = System.currentTimeMillis() - startFastMs
+                                        android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : Tubidy direct en ${dur}ms !")
+                                    }
+                                } else {
+                                    if (failedSources.incrementAndGet() >= activeSources) {
+                                        deferred.completeExceptionally(IOException("Échec Tubidy cache"))
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                if (failedSources.incrementAndGet() >= activeSources) {
+                                    deferred.completeExceptionally(e)
+                                }
+                            }
+                        }
+                    }
+
+                    if (cachedIds.youtubeId != null) {
+                        launch {
+                            try {
+                                localYtDlSource?.let { src ->
+                                    val stream = src.resolveWithVideoId(cachedIds.youtubeId)
+                                    if (deferred.complete(stream)) {
+                                        val dur = System.currentTimeMillis() - startFastMs
+                                        android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : YouTube direct en ${dur}ms !")
+                                    }
+                                } ?: run {
+                                    if (failedSources.incrementAndGet() >= activeSources) {
+                                        deferred.completeExceptionally(IOException("Moteur YouTube non prêt"))
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                if (failedSources.incrementAndGet() >= activeSources) {
+                                    deferred.completeExceptionally(e)
+                                }
+                            }
+                        }
+                    }
+
+                    try {
+                        deferred.await()
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                null
+            }
+
+            if (cachedWinner != null) {
+                cache[spotifyTrackId] = cachedWinner
+                _resolved.update { it + (spotifyTrackId to cachedWinner) }
+                return cachedWinner
+            }
         }
 
         // 2. Course Concurrente : Tubidy MP3 Direct (< 1s) vs YouTube Natif HQ (Opus/M4A)
@@ -183,6 +255,11 @@ object StreamResolver {
             }
 
             if (raceWinner != null) {
+                val ytId = raceWinner.headers["X-YouTube-Id"]
+                val tubidyId = raceWinner.headers["X-Tubidy-Id"]
+                if (ytId != null || tubidyId != null) {
+                    TrackIdCache.put(spotifyTrackId, youtubeId = ytId, tubidyWatchId = tubidyId)
+                }
                 cache[spotifyTrackId] = raceWinner
                 _resolved.update { it + (spotifyTrackId to raceWinner) }
                 return raceWinner

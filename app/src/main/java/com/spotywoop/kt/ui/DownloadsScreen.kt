@@ -17,11 +17,14 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
@@ -51,9 +54,11 @@ import com.spotywoop.kt.data.ActiveDownload
 /**
  * Écran Téléchargements pour écouter sa musique hors-ligne.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DownloadsScreen(
     onPlayTracks: (List<TrackResult>, Int) -> Unit,
+    onTrackOptions: (TrackResult) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val downloads by DownloadManager.downloads.collectAsStateWithLifecycle()
@@ -187,10 +192,13 @@ fun DownloadsScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
                             .background(SpotyColors.Surface)
-                            .clickable {
-                                val tracks = downloads.map { it.track }
-                                onPlayTracks(tracks, index)
-                            }
+                            .combinedClickable(
+                                onClick = {
+                                    val tracks = downloads.map { it.track }
+                                    onPlayTracks(tracks, index)
+                                },
+                                onLongClick = { onTrackOptions(track) }
+                            )
                             .padding(10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -237,14 +245,14 @@ fun DownloadsScreen(
                                     fontSize = 13.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                )
+                                    )
                             }
                         }
-                        IconButton(onClick = { DownloadManager.deleteDownload(track.id) }) {
+                        IconButton(onClick = { onTrackOptions(track) }) {
                             Icon(
-                                Icons.Rounded.DeleteOutline,
-                                contentDescription = "Supprimer le téléchargement",
-                                tint = Color.White.copy(alpha = 0.6f),
+                                Icons.Rounded.MoreVert,
+                                contentDescription = "Options",
+                                tint = Color.White.copy(alpha = 0.7f),
                             )
                         }
                     }

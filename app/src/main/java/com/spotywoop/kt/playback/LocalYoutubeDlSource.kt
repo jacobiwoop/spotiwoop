@@ -84,6 +84,20 @@ class LocalYoutubeDlSource(private val context: Context) : StreamSource {
         }
     }
 
+    fun resolveWithVideoId(videoId: String): ResolvedStream {
+        if (!ensureInitialized(context)) {
+            throw IOException("Moteur natif non initialisé")
+        }
+        val directUrl = "https://www.youtube.com/watch?v=$videoId"
+        val stream = resolveTarget(directUrl, isYouTube = true)
+        if (!isStreamAccessible(stream.url, stream.headers)) {
+            throw IOException("Flux inaccessible pour $videoId")
+        }
+        return stream.copy(
+            headers = stream.headers + ("X-YouTube-Id" to videoId)
+        )
+    }
+
     fun resolveWithQuery(query: String, durationMs: Long? = null): ResolvedStream {
         if (!ensureInitialized(context)) {
             throw IOException("Moteur natif non initialisé")
@@ -100,14 +114,9 @@ class LocalYoutubeDlSource(private val context: Context) : StreamSource {
             val candidateIds = SpotDlMatcher.findCandidateVideoIds(query, durationMs, limit = 4)
             for (videoId in candidateIds) {
                 try {
-                    val directUrl = "https://www.youtube.com/watch?v=$videoId"
-                    val stream = resolveTarget(directUrl, isYouTube = true)
-                    if (isStreamAccessible(stream.url, stream.headers)) {
-                        Log.i(TAG, "Succès SpotDL Matcher vérifié (200 OK) -> $directUrl")
-                        return stream
-                    } else {
-                        Log.w(TAG, "Flux pour $directUrl a retourné une erreur (ex: 403), passage au candidat suivant...")
-                    }
+                    val stream = resolveWithVideoId(videoId)
+                    Log.i(TAG, "Succès SpotDL Matcher vérifié (200 OK) -> https://www.youtube.com/watch?v=$videoId")
+                    return stream
                 } catch (e: Exception) {
                     Log.w(TAG, "Échec extraction pour $videoId: ${e.message}")
                 }

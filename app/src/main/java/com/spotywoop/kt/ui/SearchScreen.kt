@@ -27,9 +27,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Album
 import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.HighlightOff
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Person
@@ -44,6 +48,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.spotywoop.kt.data.LocalLibraryStore
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -346,8 +352,10 @@ private fun ResultList(
     onOpenAlbum: (albumName: String, artistName: String, coverUrl: String?) -> Unit,
     onOpenArtist: (artistName: String, coverUrl: String?) -> Unit,
 ) {
+    val likedTracks by LocalLibraryStore.likedTracks.collectAsStateWithLifecycle()
     val rows: List<RowData> = when (tab) {
         SearchTab.Tracks -> results.tracks.map { track ->
+            val isLiked = likedTracks.any { it.id == track.id }
             RowData(
                 id = track.id,
                 title = track.name,
@@ -357,6 +365,9 @@ private fun ResultList(
                 explicit = track.isExplicit,
                 trailing = track.durationLabel,
                 onClick = { onPlayTrack(track) },
+                onLongClick = { onTrackOptions(track) },
+                isLiked = isLiked,
+                onLikeClick = { LocalLibraryStore.toggleLike(track) },
                 onOptionsClick = { onTrackOptions(track) },
             )
         }
@@ -413,9 +424,13 @@ private data class RowData(
     val trailing: String? = null,
     val round: Boolean = false,
     val onClick: () -> Unit = {},
+    val onLongClick: (() -> Unit)? = null,
+    val isLiked: Boolean? = null,
+    val onLikeClick: (() -> Unit)? = null,
     val onOptionsClick: (() -> Unit)? = null,
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ResultRow(row: RowData) {
     val shape: Shape = if (row.round) CircleShape else RoundedCornerShape(4.dp)
@@ -425,7 +440,10 @@ private fun ResultRow(row: RowData) {
             .clip(RoundedCornerShape(8.dp))
             .background(SpotyColors.Surface)
             .border(BorderStroke(1.dp, SpotyColors.Border), RoundedCornerShape(8.dp))
-            .clickable(onClick = row.onClick)
+            .combinedClickable(
+                onClick = row.onClick,
+                onLongClick = row.onLongClick ?: row.onOptionsClick,
+            )
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -473,7 +491,19 @@ private fun ResultRow(row: RowData) {
             Spacer(Modifier.width(8.dp))
             Text(it, color = SpotyColors.TextSecondary, fontSize = 12.sp)
         }
-        if (row.onOptionsClick != null) {
+        if (row.isLiked != null && row.onLikeClick != null) {
+            IconButton(
+                onClick = row.onLikeClick,
+                modifier = Modifier.size(36.dp).padding(4.dp),
+            ) {
+                Icon(
+                    if (row.isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = if (row.isLiked) "Retirer des favoris" else "Ajouter aux favoris",
+                    tint = if (row.isLiked) SpotyColors.SpotifyGreen else SpotyColors.TextSecondary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        } else if (row.onOptionsClick != null) {
             IconButton(
                 onClick = row.onOptionsClick,
                 modifier = Modifier.size(36.dp).padding(4.dp),
