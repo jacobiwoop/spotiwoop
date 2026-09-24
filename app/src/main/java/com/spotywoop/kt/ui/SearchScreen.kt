@@ -104,14 +104,26 @@ fun SearchScreen(
             onSubmit = submit,
             loading = state.loading,
         )
-        state.results?.let { results ->
-            Spacer(Modifier.height(12.dp))
-            Tabs(results, state.tab, vm::onTabSelected)
+        if (!state.showSuggestions) {
+            state.results?.let { results ->
+                Spacer(Modifier.height(12.dp))
+                Tabs(results, state.tab, vm::onTabSelected)
+            }
         }
         Spacer(Modifier.height(12.dp))
         Box(Modifier.weight(1f).fillMaxWidth()) {
             val results = state.results
             when {
+                state.showSuggestions && state.suggestions.isNotEmpty() -> {
+                    SuggestionsList(
+                        suggestions = state.suggestions,
+                        onSelect = { selectedQuery ->
+                            keyboard?.hide()
+                            focus.clearFocus()
+                            vm.selectSuggestion(selectedQuery)
+                        }
+                    )
+                }
                 state.loading && results == null -> CircularProgressIndicator(
                     color = SpotyColors.Gold,
                     modifier = Modifier.align(Alignment.Center),
@@ -125,6 +137,46 @@ fun SearchScreen(
                     onTrackOptions = onTrackOptions,
                     onOpenAlbum = onOpenAlbum,
                     onOpenArtist = onOpenArtist,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionsList(
+    suggestions: List<String>,
+    onSelect: (String) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        items(suggestions) { item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onSelect(item) }
+                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Rounded.Search,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.35f),
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = item,
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
