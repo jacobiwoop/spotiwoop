@@ -33,7 +33,6 @@ import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.HighlightOff
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.QueueMusic
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Close
@@ -176,17 +175,7 @@ private fun Header(onOpenSettings: () -> Unit = {}) {
             color = Color.White,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f),
-        )
-
-        IconButton(onClick = onOpenSettings) {
-            Icon(
-                Icons.Outlined.PhotoCamera,
-                contentDescription = "Scan / Paramètres",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp),
             )
-        }
     }
 }
 
