@@ -1,15 +1,21 @@
 package com.spotywoop.kt.playback
 
 import android.content.Context
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /** URL audio réelle d'un titre, avec de quoi l'afficher dans le lecteur. */
 data class ResolvedStream(
@@ -110,27 +116,85 @@ object StreamResolver {
             listOfNotNull(artist, title).joinToString(" ").trim()
         }
 
-        // 2. Moteur Natif Téléphone (youtubedl-android / Seal engine : SoundCloud + YouTube en local direct)
-        localYtDlSource?.let { source ->
-            if (query.isNotBlank()) {
-                try {
-                    android.util.Log.d("StreamResolver", "Tentative source: ${source.name} pour '$query' (durée: ${durationMs}ms)")
-                    val stream = source.resolveWithQuery(query, durationMs)
-                    android.util.Log.i("StreamResolver", "Succès source: ${stream.source} -> ${stream.quality}")
-                    cache[spotifyTrackId] = stream
-                    _resolved.update { it + (spotifyTrackId to stream) }
-                    return stream
-                } catch (e: Exception) {
-                    android.util.Log.w("StreamResolver", "Échec source ${source.name}: ${e.message}")
-                    errors += "${source.name} : ${e.message}"
+        // 2. Course Concurrente : Tubidy MP3 Direct (< 1s) vs YouTube Natif HQ (Opus/M4A)
+        if (query.isNotBlank()) {
+            val startMs = System.currentTimeMillis()
+            val raceWinner: ResolvedStream? = try {
+                runBlocking(Dispatchers.IO) {
+                    val deferred = CompletableDeferred<ResolvedStream>()
+                    val failedSources = AtomicInteger(0)
+                    val totalSources = 2
+
+                    // Couloir 1 : Tubidy Natif (requêtes HTTP directes ultra-rapides)
+                    val tubidyJob = launch {
+                        try {
+                            val stream = TubidySource.resolveWithQuery(query)
+                            if (stream != null) {
+                                if (deferred.complete(stream)) {
+                                    val duration = System.currentTimeMillis() - startMs
+                                    android.util.Log.i("StreamResolver", "🏆 Tubidy a gagné la course en ${duration}ms pour '$query' !")
+                                }
+                            } else {
+                                if (failedSources.incrementAndGet() >= totalSources) {
+                                    deferred.completeExceptionally(IOException("Toutes les sources de la course ont échoué"))
+                                }
+                            }
+                        } catch (e: Exception) {
+                            if (failedSources.incrementAndGet() >= totalSources) {
+                                deferred.completeExceptionally(e)
+                            }
+                        }
+                    }
+
+                    // Couloir 2 : YouTube Music Natif
+                    val ytJob = launch {
+                        try {
+                            localYtDlSource?.let { src ->
+                                val stream = src.resolveWithQuery(query, durationMs)
+                                if (deferred.complete(stream)) {
+                                    val duration = System.currentTimeMillis() - startMs
+                                    android.util.Log.i("StreamResolver", "🏆 YouTube a gagné la course en ${duration}ms pour '$query' !")
+                                }
+                            } ?: run {
+                                if (failedSources.incrementAndGet() >= totalSources) {
+                                    deferred.completeExceptionally(IOException("Moteur YouTube non disponible"))
+                                }
+                            }
+                        } catch (e: Exception) {
+                            if (failedSources.incrementAndGet() >= totalSources) {
+                                deferred.completeExceptionally(e)
+                            }
+                        }
+                    }
+
+                    try {
+                        val winner = deferred.await()
+                        tubidyJob.cancel()
+                        ytJob.cancel()
+                        winner
+                    } catch (e: Exception) {
+                        tubidyJob.cancel()
+                        ytJob.cancel()
+                        null
+                    }
                 }
+            } catch (e: Exception) {
+                null
+            }
+
+            if (raceWinner != null) {
+                cache[spotifyTrackId] = raceWinner
+                _resolved.update { it + (spotifyTrackId to raceWinner) }
+                return raceWinner
+            } else {
+                errors += "Course Tubidy/YouTube: non résolu"
             }
         }
 
-        // 3. Serveur HQ de secours (si le moteur natif échoue ou est encore en cours d'initialisation)
+        // 3. Serveur HQ de secours (si la course échoue ou est hors-ligne)
         if (query.isNotBlank()) {
             try {
-                android.util.Log.d("StreamResolver", "Tentative source: ${serverSource.name} pour '$query'")
+                android.util.Log.d("StreamResolver", "Tentative source secours: ${serverSource.name} pour '$query'")
                 val stream = serverSource.resolveWithQuery(spotifyTrackId, query)
                 android.util.Log.i("StreamResolver", "Succès source: ${serverSource.name} -> ${stream.quality}")
                 cache[spotifyTrackId] = stream
@@ -142,7 +206,7 @@ object StreamResolver {
             }
         }
 
-        // 3. Fallback Aperçu Spotify 30s (non mis en cache permanent pour retenter le titre complet au prochain clic)
+        // 4. Fallback Aperçu Spotify 30s
         try {
             android.util.Log.d("StreamResolver", "Tentative source: ${previewSource.name} pour $spotifyTrackId")
             val stream = previewSource.resolve(spotifyTrackId)
@@ -155,6 +219,28 @@ object StreamResolver {
         }
 
         throw IOException(errors.joinToString(" | ").ifEmpty { "Aucune source audio disponible" })
+    }
+
+    /**
+     * Pré-charge discrètement en tâche de fond le morceau suivant dans le cache.
+     * Dès que l'utilisateur ou ExoPlayer passera à ce morceau, la lecture démarrera en 0 ms.
+     */
+    fun prefetch(
+        spotifyTrackId: String,
+        artist: String? = null,
+        title: String? = null,
+        durationMs: Long? = null,
+    ) {
+        if (spotifyTrackId.isBlank() || cache.containsKey(spotifyTrackId)) return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                android.util.Log.d("StreamResolver", "Pré-chargement anticipé en tâche de fond : '$title' ($spotifyTrackId)")
+                resolve(spotifyTrackId, artist, title, durationMs)
+                android.util.Log.i("StreamResolver", "Pré-chargement réussi (prêt pour 0ms) : '$title'")
+            } catch (e: Exception) {
+                android.util.Log.w("StreamResolver", "Échec pré-chargement pour '$title': ${e.message}")
+            }
+        }
     }
 
     fun invalidate(spotifyTrackId: String) { cache.remove(spotifyTrackId) }

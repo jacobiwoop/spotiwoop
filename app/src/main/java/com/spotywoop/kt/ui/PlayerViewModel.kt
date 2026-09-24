@@ -169,6 +169,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                     val mediaItems = next5.map { it.toMediaItem() }
                     withController {
                         addMediaItems(mediaItems)
+                        preloadNextTrack(this)
                     }
                     _state.update {
                         it.copy(
@@ -331,6 +332,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
         if (trackChanged && current != null) {
             loadLyrics(current)
+            preloadNextTrack(c)
         }
 
         // Mode infini automatique (Radio Auto Glissante) :
@@ -343,6 +345,20 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 triggerAutoRadioRolling(c)
             } else if (!c.hasNextMediaItem()) {
                 triggerAutoplay(c, current)
+            }
+        }
+    }
+
+    private fun preloadNextTrack(c: MediaController) {
+        val nextIndex = c.currentMediaItemIndex + 1
+        if (nextIndex < c.mediaItemCount) {
+            val nextItem = c.getMediaItemAt(nextIndex)
+            val trackId = nextItem.mediaId
+            val artist = nextItem.mediaMetadata.artist?.toString()
+            val title = nextItem.mediaMetadata.title?.toString()
+            val durationMs = nextItem.mediaMetadata.extras?.getLong("durationMs")
+            if (trackId.isNotBlank()) {
+                StreamResolver.prefetch(trackId, artist, title, durationMs)
             }
         }
     }
@@ -376,6 +392,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                     val newItems = new5.map { it.toMediaItem() }
                     withController {
                         addMediaItems(newItems)
+                        preloadNextTrack(this)
                     }
                     _state.update {
                         it.copy(radioQueue = it.radioQueue + new5)
