@@ -113,17 +113,17 @@ object AppUpdateManager {
                         val ctx = appContext
                         var previousWasObsolete = false
                         if (ctx != null) {
-                            val updatesDir = File(ctx.cacheDir, "updates")
+                            val updatesDir = getUpdatesDir(ctx)
                             if (updatesDir.exists()) {
                                 val targetFile = File(updatesDir, targetAsset.name)
-                                if (targetFile.exists() && targetFile.length() > 0) {
+                                if (isValidApk(ctx, targetFile, targetAsset.size)) {
                                     // Fichier déjà téléchargé et correspond à la toute dernière version !
                                     android.util.Log.i("AppUpdateManager", "APK déjà présent et à jour: ${targetFile.name}")
                                     _status.value = UpdateStatus.ReadyToInstall(targetFile, info, isLatest = true)
                                     return@launch
                                 } else {
-                                    // Des fichiers APK d'anciennes versions existent ? Nettoyer
-                                    val oldApks = updatesDir.listFiles { f -> f.extension.equals("apk", ignoreCase = true) }
+                                    // APK obsolète ou incomplet (téléchargement interrompu) : nettoyer
+                                    val oldApks = updatesDir.listFiles { f -> f.extension.equals("apk", ignoreCase = true) || f.extension == "part" }
                                     if (!oldApks.isNullOrEmpty()) {
                                         android.util.Log.i("AppUpdateManager", "Suppression de ${oldApks.size} ancien(s) APK obsolète(s)")
                                         oldApks.forEach { it.delete() }
@@ -155,11 +155,14 @@ object AppUpdateManager {
 
         scope.launch {
             try {
-                val updatesDir = File(context.cacheDir, "updates").also { it.mkdirs() }
+                val updatesDir = getUpdatesDir(context)
                 // Nettoyer tout ancien APK
-                updatesDir.listFiles { f -> f.extension.equals("apk", ignoreCase = true) }?.forEach { it.delete() }
+                updatesDir.listFiles { f -> f.extension.equals("apk", ignoreCase = true) || f.extension == "part" }?.forEach { it.delete() }
 
                 val apkFile = File(updatesDir, info.assetName)
+                // On écrit dans un .part puis on renomme : un téléchargement interrompu
+                // ne laisse jamais un APK tronqué pris pour « prêt à installer ».
+                val partFile = File(updatesDir, info.assetName + ".part")
 
                 val req = Request.Builder()
                     .url(info.downloadUrl)
@@ -176,7 +179,7 @@ object AppUpdateManager {
                     val buffer = ByteArray(32768)
                     val input = body.byteStream()
 
-                    FileOutputStream(apkFile).use { out ->
+                    FileOutputStream(partFile).use { out ->
                         var read: Int
                         var lastEmit = 0L
                         while (input.read(buffer).also { read = it } != -1) {
@@ -190,6 +193,16 @@ object AppUpdateManager {
                             }
                         }
                     }
+                    if (totalBytes > 0 && downloaded != totalBytes) {
+                        partFile.delete()
+                        throw IOException("téléchargement incomplet ($downloaded / $totalBytes octets)")
+                    }
+                }
+
+                if (!partFile.renameTo(apkFile)) throw IOException("Impossible de finaliser le fichier")
+                if (!isValidApk(context, apkFile, info.assetSize)) {
+                    apkFile.delete()
+                    throw IOException("APK corrompu, réessayez")
                 }
 
                 _status.value = UpdateStatus.ReadyToInstall(apkFile, info, isLatest = true)
@@ -204,6 +217,11 @@ object AppUpdateManager {
         }
     }
 
+    private fun getUpdatesDir(context: Context): File {
+        val base = context.externalCacheDir ?: context.cacheDir
+        return File(base, "updates").also { it.mkdirs() }
+    }
+
     fun launchInstaller(context: Context, apkFile: File) {
         try {
             val contentUri = FileProvider.getUriForFile(
@@ -216,10 +234,35 @@ object AppUpdateManager {
                 setDataAndType(contentUri, "application/vnd.android.package-archive")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
+
+            // Accorder explicitement la permission à toutes les applications susceptibles de gérer l'installation
+            val resolveInfos = context.packageManager.queryIntentActivities(
+                intent,
+                android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
+            )
+            for (resolveInfo in resolveInfos) {
+                context.grantUriPermission(
+                    resolveInfo.activityInfo.packageName,
+                    contentUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+
             context.startActivity(intent)
         } catch (e: Exception) {
             android.util.Log.e("AppUpdateManager", "Impossible de lancer l'installateur: ${e.message}")
             _status.value = UpdateStatus.Error("Impossible d'ouvrir l'installateur : ${e.message}")
+        }
+    }
+
+    /** Taille attendue + lisible par le PackageManager (sinon « package non valide »). */
+    private fun isValidApk(context: Context, file: File, expectedSize: Long): Boolean {
+        if (!file.exists() || file.length() == 0L) return false
+        if (expectedSize > 0 && file.length() != expectedSize) return false
+        return try {
+            context.packageManager.getPackageArchiveInfo(file.absolutePath, 0) != null
+        } catch (e: Exception) {
+            false
         }
     }
 
