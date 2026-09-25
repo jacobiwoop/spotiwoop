@@ -5,6 +5,10 @@ import android.content.ComponentName
 import android.net.Uri
 import android.os.Bundle
 import androidx.core.content.ContextCompat
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -17,6 +21,7 @@ import com.spotywoop.kt.data.LyricsClient
 import com.spotywoop.kt.data.LyricsResult
 import com.spotywoop.kt.data.TrackResult
 import com.spotywoop.kt.data.YouTubeRadioClient
+import com.spotywoop.kt.playback.OfflineSkipper
 import com.spotywoop.kt.playback.PlaybackService
 import com.spotywoop.kt.playback.ResolvedStream
 import com.spotywoop.kt.playback.StreamResolver
@@ -73,6 +78,22 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     private var controller: MediaController? = null
     private var pending: (MediaController.() -> Unit)? = null
     private var isPrefetchingAutoplay = false
+    private var wasOnline = true
+
+    // Retour de la connexion : les titres sautés redeviennent jouables, on relance le pré-chargement.
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+            if (!caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) return
+            viewModelScope.launch {
+                if (!wasOnline) controller?.let { preloadNextTrack(it) }
+                wasOnline = true
+            }
+        }
+
+        override fun onLost(network: Network) {
+            viewModelScope.launch { wasOnline = OfflineSkipper.isOnline(getApplication()) }
+        }
+    }
 
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) = refresh()
@@ -108,9 +129,28 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             StreamResolver.resolved.collect { refresh() }
         }
+        viewModelScope.launch {
+            OfflineSkipper.notice.collect { msg ->
+                if (msg != null) {
+                    _state.update { it.copy(error = msg) }
+                    OfflineSkipper.consumeNotice()
+                }
+            }
+        }
+
+        wasOnline = OfflineSkipper.isOnline(app)
+        app.getSystemService(ConnectivityManager::class.java)?.registerNetworkCallback(
+            NetworkRequest.Builder().addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build(),
+            networkCallback,
+        )
     }
 
     fun playQueue(tracks: List<TrackResult>, startIndex: Int) {
+        val selectedTrack = tracks.getOrNull(startIndex) ?: return
+        if (!OfflineSkipper.isOnline(getApplication()) && !com.spotywoop.kt.data.DownloadManager.isDownloaded(selectedTrack.id)) {
+            _state.update { it.copy(error = "Ce titre n'est pas disponible hors connexion") }
+            return
+        }
         val items = tracks.map { it.toMediaItem() }
         withController {
             setMediaItems(items, startIndex, 0L)
@@ -135,6 +175,10 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
      * 3. Recharge automatiquement 5 morceaux quand on arrive à l'avant-dernier, basés sur le dernier
      */
     fun playTrackWithAutoRadio(track: TrackResult) {
+        if (!OfflineSkipper.isOnline(getApplication()) && !com.spotywoop.kt.data.DownloadManager.isDownloaded(track.id)) {
+            _state.update { it.copy(error = "Ce titre n'est pas disponible hors connexion") }
+            return
+        }
         val item = track.toMediaItem()
         withController {
             setMediaItems(listOf(item), 0, 0L)
@@ -195,7 +239,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     fun next() = withController {
         if (hasNextMediaItem()) {
             seekToNextMediaItem()
-        } else {
+        } else if (_state.value.isRadioActive) {
             val queue = _state.value.radioQueue
             val currentId = currentMediaItem?.mediaId
             val currentIndex = queue.indexOfFirst { it.id == currentId }
@@ -214,6 +258,10 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     fun seekTo(positionMs: Long) = withController { seekTo(positionMs) }
 
     fun playTrackFromQueue(track: TrackResult) {
+        if (!OfflineSkipper.isOnline(getApplication()) && !com.spotywoop.kt.data.DownloadManager.isDownloaded(track.id)) {
+            _state.update { it.copy(error = "Ce titre n'est pas disponible hors connexion") }
+            return
+        }
         val c = controller ?: return
         val queue = _state.value.radioQueue
         val index = queue.indexOfFirst { it.id == track.id }
@@ -232,6 +280,10 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
      * Récupère 25 titres similaires fixes via YouTube Mix (Innertube), remplace la file et lance la lecture.
      */
     fun startRadioForCurrentTrack() {
+        if (!OfflineSkipper.isOnline(getApplication())) {
+            _state.update { it.copy(error = "Radio indisponible hors connexion") }
+            return
+        }
         val now = _state.value.current ?: return
         viewModelScope.launch {
             _state.update { it.copy(loadingRadio = true) }
@@ -343,13 +395,14 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             val isAtEnd = !c.hasNextMediaItem()
             if (_state.value.isAutoRadio && (isNearEnd || isAtEnd)) {
                 triggerAutoRadioRolling(c)
-            } else if (!c.hasNextMediaItem()) {
+            } else if (_state.value.isRadioActive && !c.hasNextMediaItem()) {
                 triggerAutoplay(c, current)
             }
         }
     }
 
     private fun preloadNextTrack(c: MediaController) {
+        if (!OfflineSkipper.isOnline(getApplication())) return
         val nextIndex = c.currentMediaItemIndex + 1
         if (nextIndex < c.mediaItemCount) {
             val nextItem = c.getMediaItemAt(nextIndex)
@@ -408,7 +461,8 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Fallback standard pour lecture non-radio en fin de file.
+     * Radio explicite (25 titres) arrivée en fin de file : on la prolonge.
+     * Jamais appelé pour une playlist / un album / les téléchargements : la lecture s'arrête.
      */
     private fun triggerAutoplay(c: MediaController, current: NowPlaying) {
         isPrefetchingAutoplay = true
@@ -473,6 +527,10 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        runCatching {
+            getApplication<Application>().getSystemService(ConnectivityManager::class.java)
+                ?.unregisterNetworkCallback(networkCallback)
+        }
         controller?.removeListener(listener)
         controller?.release()
         super.onCleared()

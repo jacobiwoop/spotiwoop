@@ -36,6 +36,8 @@ class PlaybackService : MediaSessionService() {
 
         // Initialise StreamResolver avec SpotiflacSource en priorité
         StreamResolver.init(applicationContext)
+        // Le service peut être recréé sans l'activité : le catalogue hors-ligne doit être chargé
+        com.spotywoop.kt.data.DownloadManager.init(applicationContext)
 
         val http = DefaultHttpDataSource.Factory()
             .setUserAgent(LocalYoutubeDlSource.CHROME_USER_AGENT)
@@ -55,6 +57,7 @@ class PlaybackService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
+        player.addListener(OfflineSkipper(applicationContext, player))
 
         val openApp = PendingIntent.getActivity(
             this,
