@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
@@ -57,7 +59,28 @@ class PlaybackService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
+        player.addAnalyticsListener(androidx.media3.exoplayer.util.EventLogger())
         player.addListener(OfflineSkipper(applicationContext, player))
+        player.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                val stateName = when (state) {
+                    Player.STATE_IDLE -> "IDLE"
+                    Player.STATE_BUFFERING -> "BUFFERING"
+                    Player.STATE_READY -> "READY"
+                    Player.STATE_ENDED -> "ENDED"
+                    else -> "$state"
+                }
+                android.util.Log.d("PlaybackService", "ExoPlayer playbackState: $stateName, playWhenReady=${player.playWhenReady}")
+            }
+
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                android.util.Log.d("PlaybackService", "ExoPlayer onPlayWhenReadyChanged: playWhenReady=$playWhenReady, reason=$reason")
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                android.util.Log.e("PlaybackService", "ExoPlayer onPlayerError: ${error.errorCodeName} - ${error.message}", error)
+            }
+        })
 
         val openApp = PendingIntent.getActivity(
             this,
@@ -75,6 +98,7 @@ class PlaybackService : MediaSessionService() {
         val title = spec.uri.getQueryParameter("title")
         val durationMs = spec.uri.getQueryParameter("durationMs")?.toLongOrNull()
         val stream = StreamResolver.resolve(trackId, artist, title, durationMs)
+        android.util.Log.i("PlaybackService", "resolveSpec: URL=${stream.url}, headers=${stream.headers}")
         return spec.buildUpon()
             .setUri(Uri.parse(stream.url))
             .setHttpRequestHeaders(spec.httpRequestHeaders + stream.headers)

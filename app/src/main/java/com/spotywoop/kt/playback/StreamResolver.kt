@@ -4,6 +4,8 @@ import android.content.Context
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -122,134 +124,184 @@ object StreamResolver {
         if (cachedIds != null && (cachedIds.youtubeId != null || cachedIds.tubidyWatchId != null)) {
             val startFastMs = System.currentTimeMillis()
             val cachedWinner: ResolvedStream? = try {
-                runBlocking(Dispatchers.IO) {
-                    val deferred = CompletableDeferred<ResolvedStream>()
-                    val activeSources = (if (cachedIds.tubidyWatchId != null) 1 else 0) + (if (cachedIds.youtubeId != null && localYtDlSource != null) 1 else 0)
-                    val failedSources = AtomicInteger(0)
+                val fastScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+                val deferred = CompletableDeferred<ResolvedStream>()
+                val activeSources = (if (cachedIds.tubidyWatchId != null) 1 else 0) +
+                    (if (cachedIds.youtubeId != null && localYtDlSource != null) 1 else 0) +
+                    1 // Vercel Cloud (Turso DB ~80ms)
+                val failedSources = AtomicInteger(0)
 
-                    if (cachedIds.tubidyWatchId != null) {
-                        launch {
-                            try {
-                                val stream = TubidySource.resolveWithWatchId(cachedIds.tubidyWatchId)
-                                if (stream != null) {
-                                    if (deferred.complete(stream)) {
-                                        val dur = System.currentTimeMillis() - startFastMs
-                                        android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : Tubidy direct en ${dur}ms !")
-                                    }
-                                } else {
-                                    if (failedSources.incrementAndGet() >= activeSources) {
-                                        deferred.completeExceptionally(IOException("Échec Tubidy cache"))
-                                    }
+                // Option A : Vercel Cloud avec cache Turso instantané
+                fastScope.launch {
+                    try {
+                        val stream = VercelSource.resolve(spotifyTrackId, query)
+                        if (stream != null) {
+                            if (deferred.complete(stream)) {
+                                val dur = System.currentTimeMillis() - startFastMs
+                                android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : Vercel/Turso Cloud en ${dur}ms !")
+                            }
+                        } else {
+                            if (failedSources.incrementAndGet() >= activeSources) {
+                                deferred.completeExceptionally(IOException("Échec Vercel cache"))
+                            }
+                        }
+                    } catch (e: Exception) {
+                        if (failedSources.incrementAndGet() >= activeSources) {
+                            deferred.completeExceptionally(e)
+                        }
+                    }
+                }
+
+                if (cachedIds.tubidyWatchId != null) {
+                    fastScope.launch {
+                        try {
+                            val stream = TubidySource.resolveWithWatchId(cachedIds.tubidyWatchId)
+                            if (stream != null) {
+                                if (deferred.complete(stream)) {
+                                    val dur = System.currentTimeMillis() - startFastMs
+                                    android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : Tubidy direct en ${dur}ms !")
                                 }
-                            } catch (e: Exception) {
+                            } else {
                                 if (failedSources.incrementAndGet() >= activeSources) {
-                                    deferred.completeExceptionally(e)
+                                    deferred.completeExceptionally(IOException("Échec Tubidy cache"))
                                 }
+                            }
+                        } catch (e: Exception) {
+                            if (failedSources.incrementAndGet() >= activeSources) {
+                                deferred.completeExceptionally(e)
                             }
                         }
                     }
+                }
 
-                    if (cachedIds.youtubeId != null) {
-                        launch {
-                            try {
-                                localYtDlSource?.let { src ->
-                                    val stream = src.resolveWithVideoId(cachedIds.youtubeId)
-                                    if (deferred.complete(stream)) {
-                                        val dur = System.currentTimeMillis() - startFastMs
-                                        android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : YouTube direct en ${dur}ms !")
-                                    }
-                                } ?: run {
-                                    if (failedSources.incrementAndGet() >= activeSources) {
-                                        deferred.completeExceptionally(IOException("Moteur YouTube non prêt"))
-                                    }
+                if (cachedIds.youtubeId != null) {
+                    fastScope.launch {
+                        try {
+                            localYtDlSource?.let { src ->
+                                val stream = src.resolveWithVideoId(cachedIds.youtubeId)
+                                if (deferred.complete(stream)) {
+                                    val dur = System.currentTimeMillis() - startFastMs
+                                    android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : YouTube direct en ${dur}ms !")
                                 }
-                            } catch (e: Exception) {
+                            } ?: run {
                                 if (failedSources.incrementAndGet() >= activeSources) {
-                                    deferred.completeExceptionally(e)
+                                    deferred.completeExceptionally(IOException("Moteur YouTube non prêt"))
                                 }
+                            }
+                        } catch (e: Exception) {
+                            if (failedSources.incrementAndGet() >= activeSources) {
+                                deferred.completeExceptionally(e)
                             }
                         }
                     }
+                }
 
+                val winner = runBlocking {
                     try {
                         deferred.await()
                     } catch (e: Exception) {
                         null
                     }
                 }
+                fastScope.cancel()
+                winner
             } catch (e: Exception) {
                 null
             }
 
             if (cachedWinner != null) {
+                val ytId = cachedWinner.headers["X-YouTube-Id"]
+                val tubidyId = cachedWinner.headers["X-Tubidy-Id"]
+                if (ytId != null || tubidyId != null) {
+                    TrackIdCache.put(spotifyTrackId, youtubeId = ytId, tubidyWatchId = tubidyId)
+                }
                 cache[spotifyTrackId] = cachedWinner
                 _resolved.update { it + (spotifyTrackId to cachedWinner) }
                 return cachedWinner
             }
         }
 
-        // 2. Course Concurrente : Tubidy MP3 Direct (< 1s) vs YouTube Natif HQ (Opus/M4A)
+        // 2. Course Concurrente : Vercel/Turso Cloud (~80ms) vs Tubidy MP3 Direct (< 1s) vs YouTube Natif HQ (Opus/M4A)
         if (query.isNotBlank()) {
             val startMs = System.currentTimeMillis()
             val raceWinner: ResolvedStream? = try {
-                runBlocking(Dispatchers.IO) {
-                    val deferred = CompletableDeferred<ResolvedStream>()
-                    val failedSources = AtomicInteger(0)
-                    val totalSources = 2
+                val raceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+                val deferred = CompletableDeferred<ResolvedStream>()
+                val failedSources = AtomicInteger(0)
+                val totalSources = 3
 
-                    // Couloir 1 : Tubidy Natif (requêtes HTTP directes ultra-rapides)
-                    val tubidyJob = launch {
-                        try {
-                            val stream = TubidySource.resolveWithQuery(query)
-                            if (stream != null) {
-                                if (deferred.complete(stream)) {
-                                    val duration = System.currentTimeMillis() - startMs
-                                    android.util.Log.i("StreamResolver", "🏆 Tubidy a gagné la course en ${duration}ms pour '$query' !")
-                                }
-                            } else {
-                                if (failedSources.incrementAndGet() >= totalSources) {
-                                    deferred.completeExceptionally(IOException("Toutes les sources de la course ont échoué"))
-                                }
-                            }
-                        } catch (e: Exception) {
-                            if (failedSources.incrementAndGet() >= totalSources) {
-                                deferred.completeExceptionally(e)
-                            }
-                        }
-                    }
-
-                    // Couloir 2 : YouTube Music Natif
-                    val ytJob = launch {
-                        try {
-                            localYtDlSource?.let { src ->
-                                val stream = src.resolveWithQuery(query, durationMs)
-                                if (deferred.complete(stream)) {
-                                    val duration = System.currentTimeMillis() - startMs
-                                    android.util.Log.i("StreamResolver", "🏆 YouTube a gagné la course en ${duration}ms pour '$query' !")
-                                }
-                            } ?: run {
-                                if (failedSources.incrementAndGet() >= totalSources) {
-                                    deferred.completeExceptionally(IOException("Moteur YouTube non disponible"))
-                                }
-                            }
-                        } catch (e: Exception) {
-                            if (failedSources.incrementAndGet() >= totalSources) {
-                                deferred.completeExceptionally(e)
-                            }
-                        }
-                    }
-
+                // Couloir 1 : Vercel Cloud + Turso DB (ultra-rapide, ~80ms si en cache)
+                raceScope.launch {
                     try {
-                        val winner = deferred.await()
-                        tubidyJob.cancel()
-                        ytJob.cancel()
-                        winner
+                        val stream = VercelSource.resolve(spotifyTrackId, query)
+                        if (stream != null) {
+                            if (deferred.complete(stream)) {
+                                val duration = System.currentTimeMillis() - startMs
+                                android.util.Log.i("StreamResolver", "🏆 Vercel/Turso Cloud a gagné la course en ${duration}ms pour '$query' !")
+                            }
+                        } else {
+                            if (failedSources.incrementAndGet() >= totalSources) {
+                                deferred.completeExceptionally(IOException("Toutes les sources de la course ont échoué"))
+                            }
+                        }
                     } catch (e: Exception) {
-                        tubidyJob.cancel()
-                        ytJob.cancel()
+                        if (failedSources.incrementAndGet() >= totalSources) {
+                            deferred.completeExceptionally(e)
+                        }
+                    }
+                }
+
+                // Couloir 2 : Tubidy Natif (requêtes HTTP directes ultra-rapides)
+                raceScope.launch {
+                    try {
+                        val stream = TubidySource.resolveWithQuery(query)
+                        if (stream != null) {
+                            if (deferred.complete(stream)) {
+                                val duration = System.currentTimeMillis() - startMs
+                                android.util.Log.i("StreamResolver", "🏆 Tubidy a gagné la course en ${duration}ms pour '$query' !")
+                            }
+                        } else {
+                            if (failedSources.incrementAndGet() >= totalSources) {
+                                deferred.completeExceptionally(IOException("Toutes les sources de la course ont échoué"))
+                            }
+                        }
+                    } catch (e: Exception) {
+                        if (failedSources.incrementAndGet() >= totalSources) {
+                            deferred.completeExceptionally(e)
+                        }
+                    }
+                }
+
+                // Couloir 3 : YouTube Music Natif
+                raceScope.launch {
+                    try {
+                        localYtDlSource?.let { src ->
+                            val stream = src.resolveWithQuery(query, durationMs)
+                            if (deferred.complete(stream)) {
+                                val duration = System.currentTimeMillis() - startMs
+                                android.util.Log.i("StreamResolver", "🏆 YouTube a gagné la course en ${duration}ms pour '$query' !")
+                            }
+                        } ?: run {
+                            if (failedSources.incrementAndGet() >= totalSources) {
+                                deferred.completeExceptionally(IOException("Moteur YouTube non disponible"))
+                            }
+                        }
+                    } catch (e: Exception) {
+                        if (failedSources.incrementAndGet() >= totalSources) {
+                            deferred.completeExceptionally(e)
+                        }
+                    }
+                }
+
+                val winner = runBlocking {
+                    try {
+                        deferred.await()
+                    } catch (e: Exception) {
                         null
                     }
                 }
+                raceScope.cancel()
+                winner
             } catch (e: Exception) {
                 null
             }

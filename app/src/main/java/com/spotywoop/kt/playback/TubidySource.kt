@@ -22,6 +22,10 @@ object TubidySource {
         .followRedirects(true)
         .build()
 
+    private val noRedirectClient = httpClient.newBuilder()
+        .followRedirects(false)
+        .build()
+
     // Matcher pour liens de veille Tubidy : /watch/{id}/mp4/fs
     private val WATCH_REGEX = Pattern.compile("""href=["'](?://mp3\.tubidy\.cool)?/watch/([a-zA-Z0-9_=-]+)/""")
     // Matcher pour lien direct audio d2mefast.net
@@ -83,10 +87,36 @@ object TubidySource {
             }
 
             val streamUrl = d2meMatcher.group(1) ?: return null
-            Log.i(TAG, "Succès Tubidy MP3 direct trouvé: $streamUrl")
+            Log.i(TAG, "Succès lien d2mefast initial: $streamUrl")
+
+            // Résout la redirection 302 (p.php -> /tb/...mp3) en URL directe absolue pour ExoPlayer
+            var directMp3Url = streamUrl
+            try {
+                val headReq = Request.Builder()
+                    .url(streamUrl)
+                    .head()
+                    .header("User-Agent", USER_AGENT)
+                    .header("Referer", "$BASE_URL/")
+                    .build()
+                noRedirectClient.newCall(headReq).execute().use { headResp ->
+                    val loc = headResp.header("Location")
+                    if (!loc.isNullOrBlank()) {
+                        directMp3Url = if (loc.startsWith("http")) {
+                            loc
+                        } else {
+                            val uri = java.net.URI(streamUrl)
+                            val sep = if (loc.startsWith("/")) "" else "/"
+                            "${uri.scheme}://${uri.host}$sep$loc"
+                        }
+                        Log.i(TAG, "Redirection 302 résolue en MP3 direct absolu: $directMp3Url")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Impossible de résoudre la redirection 302: ${e.message}")
+            }
 
             ResolvedStream(
-                url = streamUrl,
+                url = directMp3Url,
                 source = "Tubidy MP3",
                 quality = "MP3 Direct (Ultra-rapide)",
                 headers = mapOf(
