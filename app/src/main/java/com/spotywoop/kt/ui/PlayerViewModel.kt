@@ -95,15 +95,32 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private var lastErrorRetryTrackId: String? = null
+
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) = refresh()
 
         override fun onPlayerError(error: PlaybackException) {
             val cause = generateSequence<Throwable>(error) { it.cause }.last()
             val currentId = _state.value.current?.id
+            val errorMsg = cause.message.orEmpty()
+            val is403OrIo = errorMsg.contains("403") || error.errorCodeName.contains("IO") || error.errorCodeName.contains("BEHIND_LIVE_WINDOW")
+
             if (currentId != null) {
                 StreamResolver.invalidate(currentId)
             }
+
+            // Auto-relance immédiate si c'est une erreur 403 / IO / transition réseau (1 tentative par morceau)
+            if (currentId != null && is403OrIo && lastErrorRetryTrackId != currentId) {
+                lastErrorRetryTrackId = currentId
+                android.util.Log.w("PlayerViewModel", "Auto-relance suite à erreur réseau/403 sur $currentId")
+                withController {
+                    prepare()
+                    play()
+                }
+                return
+            }
+
             _state.update { it.copy(error = cause.message ?: error.errorCodeName) }
         }
     }
@@ -383,6 +400,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         }
 
         if (trackChanged && current != null) {
+            lastErrorRetryTrackId = null
             loadLyrics(current)
             preloadNextTrack(c)
         }
@@ -548,7 +566,10 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                     .setArtist(artists)
                     .setAlbumTitle(album)
                     .setArtworkUri(cover?.let(Uri::parse))
-                    .setExtras(Bundle().apply { putBoolean(EXTRA_EXPLICIT, isExplicit) })
+                    .setExtras(Bundle().apply {
+                        putBoolean(EXTRA_EXPLICIT, isExplicit)
+                        if (durationMs > 0) putLong("durationMs", durationMs)
+                    })
                     .build(),
             )
             .build()

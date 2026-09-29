@@ -113,41 +113,45 @@ object StreamResolver {
 
         // 1. SpotiFLAC désactivé à la demande de l'utilisateur (priorité au Moteur Natif local)
 
-        val query = if (spotifyTrackId.startsWith("yt:")) {
-            "https://www.youtube.com/watch?v=${spotifyTrackId.removePrefix("yt:")}"
-        } else {
-            listOfNotNull(artist, title).joinToString(" ").trim()
-        }
+        // Pour la recherche texte (Tubidy et Vercel Cloud), on utilise impérativement artiste + titre
+        val textQuery = listOfNotNull(artist, title).joinToString(" ").trim()
+        val isYtId = spotifyTrackId.startsWith("yt:")
+        val ytVideoId = if (isYtId) spotifyTrackId.removePrefix("yt:") else null
+        val ytDirectUrl = if (isYtId) "https://www.youtube.com/watch?v=$ytVideoId" else null
+        val query = if (isYtId && textQuery.isBlank()) ytDirectUrl!! else textQuery.ifBlank { ytDirectUrl.orEmpty() }
 
         // 1.5. Vérification du Cache d'IDs (Relance instantanée ~200ms sans recherche réseau)
         val cachedIds = TrackIdCache.get(spotifyTrackId)
-        if (cachedIds != null && (cachedIds.youtubeId != null || cachedIds.tubidyWatchId != null)) {
+        val effectiveYtId = cachedIds?.youtubeId ?: ytVideoId
+        if (cachedIds != null && (effectiveYtId != null || cachedIds.tubidyWatchId != null)) {
             val startFastMs = System.currentTimeMillis()
             val cachedWinner: ResolvedStream? = try {
                 val fastScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
                 val deferred = CompletableDeferred<ResolvedStream>()
                 val activeSources = (if (cachedIds.tubidyWatchId != null) 1 else 0) +
-                    (if (cachedIds.youtubeId != null && localYtDlSource != null) 1 else 0) +
-                    1 // Vercel Cloud (Turso DB ~80ms)
+                    (if (effectiveYtId != null && localYtDlSource != null) 1 else 0) +
+                    (if (textQuery.isNotBlank()) 1 else 0) // Vercel Cloud (Turso DB ~80ms)
                 val failedSources = AtomicInteger(0)
 
                 // Option A : Vercel Cloud avec cache Turso instantané
-                fastScope.launch {
-                    try {
-                        val stream = VercelSource.resolve(spotifyTrackId, query)
-                        if (stream != null) {
-                            if (deferred.complete(stream)) {
-                                val dur = System.currentTimeMillis() - startFastMs
-                                android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : Vercel/Turso Cloud en ${dur}ms !")
+                if (textQuery.isNotBlank()) {
+                    fastScope.launch {
+                        try {
+                            val stream = VercelSource.resolve(spotifyTrackId, textQuery)
+                            if (stream != null) {
+                                if (deferred.complete(stream)) {
+                                    val dur = System.currentTimeMillis() - startFastMs
+                                    android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : Vercel/Turso Cloud en ${dur}ms !")
+                                }
+                            } else {
+                                if (failedSources.incrementAndGet() >= activeSources) {
+                                    deferred.completeExceptionally(IOException("Échec Vercel cache"))
+                                }
                             }
-                        } else {
+                        } catch (e: Exception) {
                             if (failedSources.incrementAndGet() >= activeSources) {
-                                deferred.completeExceptionally(IOException("Échec Vercel cache"))
+                                deferred.completeExceptionally(e)
                             }
-                        }
-                    } catch (e: Exception) {
-                        if (failedSources.incrementAndGet() >= activeSources) {
-                            deferred.completeExceptionally(e)
                         }
                     }
                 }
@@ -174,11 +178,11 @@ object StreamResolver {
                     }
                 }
 
-                if (cachedIds.youtubeId != null) {
+                if (effectiveYtId != null) {
                     fastScope.launch {
                         try {
                             localYtDlSource?.let { src ->
-                                val stream = src.resolveWithVideoId(cachedIds.youtubeId)
+                                val stream = src.resolveWithVideoId(effectiveYtId)
                                 if (deferred.complete(stream)) {
                                     val dur = System.currentTimeMillis() - startFastMs
                                     android.util.Log.i("StreamResolver", "⚡ Succès Cache IDs : YouTube direct en ${dur}ms !")
@@ -231,13 +235,39 @@ object StreamResolver {
                 val totalSources = 3
 
                 // Couloir 1 : Vercel Cloud + Turso DB (ultra-rapide, ~80ms si en cache)
+                if (textQuery.isNotBlank()) {
+                    raceScope.launch {
+                        try {
+                            val stream = VercelSource.resolve(spotifyTrackId, textQuery)
+                            if (stream != null) {
+                                if (deferred.complete(stream)) {
+                                    val duration = System.currentTimeMillis() - startMs
+                                    android.util.Log.i("StreamResolver", "🏆 Vercel/Turso Cloud a gagné la course en ${duration}ms pour '$textQuery' !")
+                                }
+                            } else {
+                                if (failedSources.incrementAndGet() >= totalSources) {
+                                    deferred.completeExceptionally(IOException("Toutes les sources de la course ont échoué"))
+                                }
+                            }
+                        } catch (e: Exception) {
+                            if (failedSources.incrementAndGet() >= totalSources) {
+                                deferred.completeExceptionally(e)
+                            }
+                        }
+                    }
+                } else {
+                    failedSources.incrementAndGet()
+                }
+
+                // Couloir 2 : Tubidy Natif (requêtes HTTP directes ultra-rapides sur le nom de l'artiste + chanson)
+                val tubidySearchQuery = textQuery.ifBlank { query }
                 raceScope.launch {
                     try {
-                        val stream = VercelSource.resolve(spotifyTrackId, query)
+                        val stream = TubidySource.resolveWithQuery(tubidySearchQuery)
                         if (stream != null) {
                             if (deferred.complete(stream)) {
                                 val duration = System.currentTimeMillis() - startMs
-                                android.util.Log.i("StreamResolver", "🏆 Vercel/Turso Cloud a gagné la course en ${duration}ms pour '$query' !")
+                                android.util.Log.i("StreamResolver", "🏆 Tubidy a gagné la course en ${duration}ms pour '$tubidySearchQuery' !")
                             }
                         } else {
                             if (failedSources.incrementAndGet() >= totalSources) {
@@ -251,35 +281,19 @@ object StreamResolver {
                     }
                 }
 
-                // Couloir 2 : Tubidy Natif (requêtes HTTP directes ultra-rapides)
-                raceScope.launch {
-                    try {
-                        val stream = TubidySource.resolveWithQuery(query)
-                        if (stream != null) {
-                            if (deferred.complete(stream)) {
-                                val duration = System.currentTimeMillis() - startMs
-                                android.util.Log.i("StreamResolver", "🏆 Tubidy a gagné la course en ${duration}ms pour '$query' !")
-                            }
-                        } else {
-                            if (failedSources.incrementAndGet() >= totalSources) {
-                                deferred.completeExceptionally(IOException("Toutes les sources de la course ont échoué"))
-                            }
-                        }
-                    } catch (e: Exception) {
-                        if (failedSources.incrementAndGet() >= totalSources) {
-                            deferred.completeExceptionally(e)
-                        }
-                    }
-                }
-
-                // Couloir 3 : YouTube Music Natif
+                // Couloir 3 : YouTube Music Natif (prend directement l'URL YouTube ou le terme textuel)
+                val ytTargetQuery = ytDirectUrl ?: query
                 raceScope.launch {
                     try {
                         localYtDlSource?.let { src ->
-                            val stream = src.resolveWithQuery(query, durationMs)
+                            val stream = if (ytVideoId != null) {
+                                src.resolveWithVideoId(ytVideoId)
+                            } else {
+                                src.resolveWithQuery(ytTargetQuery, durationMs)
+                            }
                             if (deferred.complete(stream)) {
                                 val duration = System.currentTimeMillis() - startMs
-                                android.util.Log.i("StreamResolver", "🏆 YouTube a gagné la course en ${duration}ms pour '$query' !")
+                                android.util.Log.i("StreamResolver", "🏆 YouTube a gagné la course en ${duration}ms pour '$ytTargetQuery' !")
                             }
                         } ?: run {
                             if (failedSources.incrementAndGet() >= totalSources) {
