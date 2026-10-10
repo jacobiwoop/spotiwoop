@@ -65,92 +65,120 @@ import com.spotywoop.kt.data.LocalLibraryStore
 import com.spotywoop.kt.data.TrackResult
 import com.spotywoop.kt.ui.theme.SpotyColors
 import java.util.Calendar
+import android.widget.Toast
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.spotywoop.kt.data.ApiCard
+import com.spotywoop.kt.data.DiscoverData
+import com.spotywoop.kt.data.SpotiwoopApi
+import com.spotywoop.kt.ui.theme.SpotyFonts
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-@Composable
-fun HomeScreen(
-    onPlayTrack: (TrackResult) -> Unit,
-    onTrackOptions: (TrackResult) -> Unit = {},
-    onOpenDownloads: () -> Unit = {},
-    onOpenLibrary: () -> Unit = {},
-    onOpenSettings: () -> Unit = {},
-    onSearchCategory: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
-) {
-    val likedTracks by LocalLibraryStore.likedTracks.collectAsStateWithLifecycle()
-    val downloads by DownloadManager.downloads.collectAsStateWithLifecycle()
+/** Genres de la page Découvrir du site (slugs Audiomack). */
+val DISCOVER_GENRES = listOf(
+    "" to "Tout",
+    "afrobeats" to "Afrosounds",
+    "rap" to "Hip-Hop/Rap",
+    "rnb" to "R&B",
+    "dancehall" to "Dancehall",
+    "amapiano" to "Amapiano",
+    "gospel" to "Gospel",
+    "latin" to "Latin",
+    "pop" to "Pop",
+    "electronic" to "Electronic",
+    "jazz" to "Jazz/Blues",
+    "instrumental" to "Instrumental",
+)
 
-    var selectedFilter by remember { mutableStateOf("Tout") }
-    val greeting = remember {
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        when (hour) {
-            in 5..11 -> "Bonjour"
-            in 12..17 -> "Bon après-midi"
-            else -> "Bonsoir"
+data class DiscoverUiState(
+    val genre: String = "",
+    val data: Map<String, DiscoverData> = emptyMap(),
+    val loading: Boolean = false,
+    val error: String? = null,
+)
+
+/** Page Découvrir : tendances, Top Bénin, albums et nouveautés Audiomack, gardés par genre. */
+class DiscoverViewModel : ViewModel() {
+    private val _state = MutableStateFlow(DiscoverUiState())
+    val state: StateFlow<DiscoverUiState> = _state.asStateFlow()
+
+    init { load("") }
+
+    fun selectGenre(genre: String) {
+        _state.update { it.copy(genre = genre) }
+        if (genre !in _state.value.data) load(genre)
+    }
+
+    fun retry() = load(_state.value.genre)
+
+    private fun load(genre: String) {
+        _state.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val data = SpotiwoopApi.discover(genre)
+                _state.update { it.copy(data = it.data + (genre to data), loading = false) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (_state.value.genre == genre) _state.update { it.copy(loading = false, error = e.message ?: "Erreur réseau") }
+            }
         }
     }
 
+    /** Charge les titres d'un album puis les rend pour la lecture. */
+    fun playCollection(card: ApiCard, onTracks: (List<TrackResult>) -> Unit, onError: () -> Unit) {
+        viewModelScope.launch {
+            val tracks = runCatching { SpotiwoopApi.collectionTracks(card.kind, card.ref) }.getOrNull()
+            if (tracks.isNullOrEmpty()) onError() else onTracks(tracks)
+        }
+    }
+}
+
+/** Accueil : la page Découvrir du site web (version mobile). */
+@Composable
+fun HomeScreen(
+    onPlayTracks: (List<TrackResult>, Int) -> Unit,
+    onTrackOptions: (TrackResult) -> Unit = {},
+    onOpenSearch: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    currentTrackId: String? = null,
+    modifier: Modifier = Modifier,
+    vm: DiscoverViewModel = viewModel(),
+) {
+    val state by vm.state.collectAsStateWithLifecycle()
     val updateStatus by AppUpdateManager.status.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val data = state.data[state.genre]
+    var fullTop by remember { mutableStateOf(false) }
+    val playCard: (ApiCard) -> Unit = { card ->
+        Toast.makeText(context, "Chargement de « ${card.title} »…", Toast.LENGTH_SHORT).show()
+        vm.playCollection(card, onTracks = { onPlayTracks(it, 0) }) {
+            Toast.makeText(context, "Impossible de charger ce contenu.", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-    LazyColumn(
-        modifier = modifier
+    Column(
+        modifier
             .fillMaxSize()
             .background(SpotyColors.Background)
             .statusBarsPadding(),
-        contentPadding = PaddingValues(bottom = 24.dp),
     ) {
-        // En-tête : Avatar + Salutation + Boutons notifications & réglages
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // Logo officiel Spotywoop
-                Image(
-                    painter = painterResource(id = R.drawable.ic_spotywoop_logo_badge),
-                    contentDescription = "Logo Spotywoop",
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop,
-                )
-
-                Spacer(Modifier.width(12.dp))
-
-                Text(
-                    text = greeting,
-                    color = Color.White,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
-
-                IconButton(onClick = {}) {
-                    Icon(
-                        Icons.Outlined.Notifications,
-                        contentDescription = "Notifications",
-                        tint = Color.White,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-
-                IconButton(onClick = onOpenSettings) {
-                    Icon(
-                        Icons.Outlined.Settings,
-                        contentDescription = "Paramètres",
-                        tint = Color.White,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-            }
-        }
-
+        WebTopBar(onClick = onOpenSearch, onOpenSettings = onOpenSettings)
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 18.dp, bottom = 32.dp),
+        ) {
         // Bannière dynamique de Mise à Jour (si disponible, prête ou en cours)
         when (val s = updateStatus) {
             is UpdateStatus.Available -> {
-                item(key = "update_banner") {
+                item(key = "update_banner") { Box(Modifier.padding(bottom = 18.dp)) {
                     UpdateBannerCard(
                         title = "Mise à jour ${s.info.tagName} disponible",
                         subtitle = if (s.previousWasObsolete) "Version précédente obsolète • Nouvelle version prête" else "Nouvelles fonctionnalités & améliorations",
@@ -158,10 +186,10 @@ fun HomeScreen(
                         badgeText = if (s.previousWasObsolete) "NOUVEAU" else null,
                         onClick = onOpenSettings,
                     )
-                }
+                } }
             }
             is UpdateStatus.ReadyToInstall -> {
-                item(key = "update_banner") {
+                item(key = "update_banner") { Box(Modifier.padding(bottom = 18.dp)) {
                     UpdateBannerCard(
                         title = "Mise à jour ${s.info?.tagName ?: ""} prête",
                         subtitle = "Téléchargé • Dernière version",
@@ -170,225 +198,90 @@ fun HomeScreen(
                         badgeColor = SpotyColors.SpotifyGreen,
                         onClick = { AppUpdateManager.launchInstaller(context, s.apkFile) },
                     )
-                }
+                } }
             }
             is UpdateStatus.Downloading -> {
-                item(key = "update_banner") {
+                item(key = "update_banner") { Box(Modifier.padding(bottom = 18.dp)) {
                     UpdateDownloadingCard(progress = s.progress)
-                }
+                } }
             }
             else -> {}
         }
 
-        // Filtres (Tout / Musique / Podcasts)
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                listOf("Tout", "Musique", "Podcasts").forEach { filter ->
-                    val isSelected = selectedFilter == filter
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                if (isSelected) SpotyColors.Gold else Color(0xFF2A2A2A)
+            item(key = "genres") {
+                WebChips(DISCOVER_GENRES, state.genre, vm::selectGenre)
+            }
+
+            when {
+                data == null && state.error != null -> item(key = "error") {
+                    WebState(text = state.error!!, action = "Réessayer", onAction = vm::retry)
+                }
+                data == null -> item(key = "loading") {
+                    Box(Modifier.fillMaxWidth().padding(top = 80.dp), contentAlignment = Alignment.Center) {
+                        androidx.compose.material3.CircularProgressIndicator(color = SpotyColors.Accent)
+                    }
+                }
+                else -> {
+                    val trending = data.trendingSongs.take(12)
+                    item(key = "h-trend") { SectionGap(); WebSectionHeader("Titres tendance"); Spacer(Modifier.height(16.dp)) }
+                    webGrid(trending.withIndex().toList(), "trend") { (i, t), m ->
+                        WebTrackCard(t.track, onClick = { onPlayTracks(trending.map { it.track }, i) }, modifier = m)
+                    }
+
+                    if (data.top.isNotEmpty()) {
+                        val top = if (fullTop) data.top else data.top.take(5)
+                        item(key = "h-top") {
+                            SectionGap()
+                            WebSectionHeader(
+                                "Top Bénin · cette semaine",
+                                link = if (data.top.size > 5) (if (fullTop) "Réduire" else "Classement") else null,
+                                onLink = { fullTop = !fullTop },
+                                leading = { BeninFlag() },
                             )
-                            .clickable { selectedFilter = filter }
-                            .padding(horizontal = 14.dp, vertical = 6.dp),
-                    ) {
-                        Text(
-                            text = filter,
-                            color = if (isSelected) Color.Black else Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(14.dp))
-        }
-
-        // Grille d'accès rapide 2 colonnes x 3 lignes (Style Spotify authentique)
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                // Ligne 1 : Titres likés & Téléchargements
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    QuickAccessCard(
-                        title = "Titres likés",
-                        gradient = Brush.linearGradient(listOf(Color(0xFF450AF5), Color(0xFF8E8EE5))),
-                        icon = Icons.Rounded.Favorite,
-                        modifier = Modifier.weight(1f),
-                        onClick = onOpenLibrary,
-                    )
-                    QuickAccessCard(
-                        title = "Téléchargements",
-                        gradient = Brush.linearGradient(listOf(Color(0xFF1DB954), Color(0xFF104924))),
-                        icon = Icons.Rounded.Download,
-                        modifier = Modifier.weight(1f),
-                        onClick = onOpenDownloads,
-                    )
-                }
-
-                // Ligne 2 : Artistes / Hits populaires
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    QuickAccessCard(
-                        title = "Stromae",
-                        imageUrl = "https://i.scdn.co/image/ab6761610000e5ebba02e3b2e5563a5aa180a562",
-                        modifier = Modifier.weight(1f),
-                        onClick = { onSearchCategory("Stromae") },
-                    )
-                    QuickAccessCard(
-                        title = "Daft Punk",
-                        imageUrl = "https://i.scdn.co/image/ab6761610000e5eb989ed050d2109e25e36fa7fb",
-                        modifier = Modifier.weight(1f),
-                        onClick = { onSearchCategory("Daft Punk") },
-                    )
-                }
-
-                // Ligne 3 : Mix & Tendances
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    QuickAccessCard(
-                        title = "Afrobeat Mix",
-                        gradient = Brush.linearGradient(listOf(Color(0xFFE13300), Color(0xFF73230B))),
-                        modifier = Modifier.weight(1f),
-                        onClick = { onSearchCategory("Afrobeat") },
-                    )
-                    QuickAccessCard(
-                        title = "Top 50 - France",
-                        gradient = Brush.linearGradient(listOf(Color(0xFF8D67AB), Color(0xFF4A154B))),
-                        modifier = Modifier.weight(1f),
-                        onClick = { onSearchCategory("Top 50 France") },
-                    )
-                }
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-
-        // Section : Vos titres likés (si disponibles)
-        if (likedTracks.isNotEmpty()) {
-            item {
-                SectionHeader(title = "Vos titres favoris", subtitle = "${likedTracks.size} titres enregistrés")
-                Spacer(Modifier.height(10.dp))
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    items(likedTracks, key = { "liked_${it.id}" }) { track ->
-                        TrackCard(
-                            track = track,
-                            onClick = { onPlayTrack(track) },
-                            onLongClick = { onTrackOptions(track) },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(24.dp))
-            }
-        }
-
-        // Section : Téléchargés hors-ligne (si disponibles)
-        if (downloads.isNotEmpty()) {
-            item {
-                SectionHeader(
-                    title = "Disponible hors-ligne",
-                    subtitle = "${downloads.size} titres prêts à l'écoute",
-                )
-                Spacer(Modifier.height(10.dp))
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    items(downloads, key = { "dl_${it.track.id}" }) { item ->
-                        TrackCard(
-                            track = item.track,
-                            onClick = { onPlayTrack(item.track) },
-                            onLongClick = { onTrackOptions(item.track) },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(24.dp))
-            }
-        }
-
-        // Section : Recommandations & Mix populaires
-        item {
-            SectionHeader(title = "Mix conçus pour vous", subtitle = "Basé sur vos écoutes récentes")
-            Spacer(Modifier.height(10.dp))
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                val mixes = listOf(
-                    CuratedMix("Daily Mix 1", "Stromae, Daft Punk, Orelsan", Brush.linearGradient(listOf(Color(0xFFE91429), Color(0xFF3B0006)))),
-                    CuratedMix("Afro Vibes", "Burna Boy, Rema, Wizkid, Asake", Brush.linearGradient(listOf(Color(0xFFFF6437), Color(0xFF531A00)))),
-                    CuratedMix("Chill & Lo-Fi", "Détente, beats doux et focus", Brush.linearGradient(listOf(Color(0xFF1E3264), Color(0xFF0D1B2A)))),
-                    CuratedMix("Électro Party", "French Touch, House & Dance", Brush.linearGradient(listOf(Color(0xFFB02897), Color(0xFF3C0A33)))),
-                    CuratedMix("Hip-Hop Français", "Ninho, PLK, Damso, SDM", Brush.linearGradient(listOf(Color(0xFF509BF5), Color(0xFF103060)))),
-                )
-                items(mixes) { mix ->
-                    CuratedMixCard(
-                        mix = mix,
-                        onClick = { onSearchCategory(mix.title) },
-                    )
-                }
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-
-        // Section : Explorer par genre
-        item {
-            SectionHeader(title = "Explorer les genres", subtitle = "Trouvez votre prochaine écoute")
-            Spacer(Modifier.height(12.dp))
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                val genres = listOf(
-                    Pair("Rap & Hip-Hop", Color(0xFFE91429)),
-                    Pair("Afrobeat", Color(0xFFFF7A00)),
-                    Pair("Pop Internationale", Color(0xFF1DB954)),
-                    Pair("Électronique / Dance", Color(0xFF8D67AB)),
-                    Pair("R&B & Soul", Color(0xFFE13300)),
-                    Pair("Rock & Alternatives", Color(0xFF27856A)),
-                )
-                for (i in genres.indices step 2) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        GenreBadge(
-                            name = genres[i].first,
-                            color = genres[i].second,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onSearchCategory(genres[i].first) },
-                        )
-                        if (i + 1 < genres.size) {
-                            GenreBadge(
-                                name = genres[i + 1].first,
-                                color = genres[i + 1].second,
-                                modifier = Modifier.weight(1f),
-                                onClick = { onSearchCategory(genres[i + 1].first) },
+                            Spacer(Modifier.height(10.dp))
+                        }
+                        itemsIndexed(top, key = { i, t -> "top-$i-${t.track.id}" }) { i, t ->
+                            WebTrackRow(
+                                track = t.track,
+                                number = "${if (t.rank > 0) t.rank else i + 1}",
+                                rank = true,
+                                change = t.change,
+                                current = t.track.id == currentTrackId,
+                                onClick = { onPlayTracks(data.top.map { it.track }, i) },
+                                onOptions = { onTrackOptions(t.track) },
                             )
-                        } else {
-                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+
+                    if (data.trendingAlbums.isNotEmpty()) {
+                        item(key = "h-albums") { SectionGap(); WebSectionHeader("Albums tendance"); Spacer(Modifier.height(16.dp)) }
+                        webGrid(data.trendingAlbums, "albums") { c, m ->
+                            WebCollectionCard(
+                                title = c.title,
+                                image = c.image,
+                                subtitle = c.subtitle,
+                                meta = if (c.plays > 0) "${compactCount(c.plays)} écoutes" else null,
+                                explicit = c.explicit,
+                                stack = true,
+                                onClick = { playCard(c) },
+                                modifier = m,
+                            )
+                        }
+                    }
+
+                    if (data.recent.isNotEmpty()) {
+                        item(key = "h-new") {
+                            SectionGap()
+                            WebSectionHeader("Nouveautés")
+                            Spacer(Modifier.height(16.dp))
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(22.dp),
+                            ) {
+                                itemsIndexed(data.recent, key = { i, t -> "new-$i-${t.track.id}" }) { i, t ->
+                                    WebTrackCard(t.track, onClick = { onPlayTracks(data.recent.map { it.track }, i) }, modifier = Modifier.width(168.dp))
+                                }
+                            }
                         }
                     }
                 }
@@ -397,216 +290,9 @@ fun HomeScreen(
     }
 }
 
+/** Espace entre deux sections, comme le site (30 px). */
 @Composable
-private fun SectionHeader(title: String, subtitle: String? = null) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text(
-            text = title,
-            color = Color.White,
-            fontSize = 19.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        if (subtitle != null) {
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = subtitle,
-                color = SpotyColors.TextMuted,
-                fontSize = 12.sp,
-            )
-        }
-    }
-}
-
-@Composable
-private fun QuickAccessCard(
-    title: String,
-    modifier: Modifier = Modifier,
-    imageUrl: String? = null,
-    gradient: Brush? = null,
-    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = modifier
-            .height(54.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFF242424))
-            .clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(54.dp)
-                .then(
-                    if (gradient != null) Modifier.background(gradient)
-                    else Modifier.background(Color(0xFF333333))
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            when {
-                imageUrl != null -> {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                }
-                icon != null -> {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.width(10.dp))
-
-        Text(
-            text = title,
-            color = Color.White,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp),
-        )
-    }
-}
-
-@Composable
-private fun TrackCard(
-    track: TrackResult,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .width(130.dp)
-            .clickable(onClick = onClick),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(130.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF282828)),
-        ) {
-            if (track.cover != null) {
-                AsyncImage(
-                    model = track.cover,
-                    contentDescription = track.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = track.name,
-            color = Color.White,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        Text(
-            text = track.artists,
-            color = SpotyColors.TextMuted,
-            fontSize = 11.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-private data class CuratedMix(
-    val title: String,
-    val subtitle: String,
-    val gradient: Brush,
-)
-
-@Composable
-private fun CuratedMixCard(
-    mix: CuratedMix,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .width(135.dp)
-            .clickable(onClick = onClick),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(135.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(mix.gradient)
-                .padding(12.dp),
-            contentAlignment = Alignment.BottomStart,
-        ) {
-            Column {
-                Text(
-                    text = mix.title,
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 18.sp,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = mix.title,
-            color = Color.White,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        Text(
-            text = mix.subtitle,
-            color = SpotyColors.TextMuted,
-            fontSize = 11.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun GenreBadge(
-    name: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .height(56.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(color)
-            .clickable(onClick = onClick)
-            .padding(12.dp),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Text(
-            text = name,
-            color = Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
+private fun SectionGap() = Spacer(Modifier.height(30.dp))
 
 @Composable
 private fun UpdateBannerCard(
@@ -734,4 +420,5 @@ private fun UpdateDownloadingCard(progress: Float) {
         )
     }
 }
+
 

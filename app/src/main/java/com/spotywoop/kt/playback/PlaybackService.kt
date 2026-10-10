@@ -36,7 +36,6 @@ class PlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
 
-        // Initialise StreamResolver avec SpotiflacSource en priorité
         StreamResolver.init(applicationContext)
         // Le service peut être recréé sans l'activité : le catalogue hors-ligne doit être chargé
         com.spotywoop.kt.data.DownloadManager.init(applicationContext)

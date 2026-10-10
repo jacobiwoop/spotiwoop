@@ -33,14 +33,29 @@ object LyricsClient {
         withContext(Dispatchers.IO) {
             val cacheKey = "$artist - $title"
             if (cache.containsKey(cacheKey)) return@withContext cache[cacheKey]
+            val started = System.currentTimeMillis()
+
+            // 0. API du site : une requête, réponse souvent déjà en cache. Si elle ne répond pas, on
+            // retombe sur LRCLIB en direct (jusqu'à 4 appels, longs quand LRCLIB rame).
+            val viaApi = runCatching {
+                kotlinx.coroutines.withTimeout(8_000) { SpotiwoopApi.lyrics(artist, title, album, durationSec) }
+            }
+            if (viaApi.isSuccess) {
+                val r = viaApi.getOrNull()
+                if (r != null) cache[cacheKey] = r
+                android.util.Log.i("Lyrics", "API '$artist - $title' (${durationSec}s) : ${r?.lines?.size ?: "aucune"} en ${System.currentTimeMillis() - started} ms")
+                return@withContext r
+            }
+            android.util.Log.w("Lyrics", "API indisponible (${viaApi.exceptionOrNull()?.message}), LRCLIB direct")
 
             // Nettoyage intelligent du titre
-            var cleanTitle = title.replace(Regex("""\(.*?\)|\[.*?\]"""), "").trim()
-            if (cleanTitle.contains("-") && (cleanTitle.startsWith(artist, ignoreCase = true) || (artist.length > 2 && cleanTitle.contains(artist, ignoreCase = true)))) {
-                cleanTitle = cleanTitle.substringAfter("-").trim()
-            } else if (cleanTitle.contains("-")) {
-                cleanTitle = cleanTitle.substringBefore("-").trim()
-            }
+            // « Titre - Artiste » (Audiomack) comme « Artiste - Titre » (YouTube) : on écarte la partie
+            // qui nomme un artiste, puis on garde la première restante (« - Radio Edit » tombe aussi).
+            val bare = title.replace(Regex("""\(.*?\)|\[.*?\]"""), "").trim()
+            val artistNames = artist.split(Regex(""",|&| x | feat\.? """, RegexOption.IGNORE_CASE)).map { it.trim() }.filter { it.isNotEmpty() }
+            val parts = bare.split(Regex("""\s+[-–—]\s+""")).map { it.trim() }.filter { it.isNotEmpty() }
+            val cleanTitle = parts.firstOrNull { p -> artistNames.none { it.equals(p, ignoreCase = true) } }
+                ?: parts.firstOrNull() ?: bare
 
             // 1. Essai avec paramètres précis
             var result = queryLrclib(artist, cleanTitle, album, durationSec)
@@ -52,17 +67,18 @@ object LyricsClient {
 
             // 3. Fallback recherche floue (indispensable pour les titres YouTube)
             if (result == null) {
-                result = searchLrclib("$artist $cleanTitle")
+                result = searchLrclib("$artist $cleanTitle", durationSec)
             }
 
             // 4. Dernier recours avec le titre brut
             if (result == null && cleanTitle != title) {
-                result = searchLrclib(title)
+                result = searchLrclib(title, durationSec)
             }
 
             if (result != null) {
                 cache[cacheKey] = result
             }
+            android.util.Log.i("Lyrics", "'$artist - $cleanTitle' (${durationSec}s) : ${if (result == null) "aucune" else "${result.lines.size} lignes"} en ${System.currentTimeMillis() - started} ms")
             result
         }
 
@@ -106,7 +122,11 @@ object LyricsClient {
         }
     }
 
-    private fun searchLrclib(query: String): LyricsResult? {
+    /**
+     * Recherche floue. Avec une durée connue, seules les versions à ±5 s comptent : sans ce garde-fou,
+     * le premier résultat venu (souvent une autre chanson) s'affichait.
+     */
+    private fun searchLrclib(query: String, durationSec: Long = 0): LyricsResult? {
         val url = "https://lrclib.net/api/search?q=" + urlEncode(query)
         val req = Request.Builder()
             .url(url)
@@ -121,9 +141,10 @@ object LyricsClient {
                 if (array.length() == 0) return null
 
                 // Trouver en priorité un résultat avec syncedLyrics
-                val limit = minOf(array.length(), 6)
-                for (i in 0 until limit) {
-                    val obj = array.getJSONObject(i)
+                val candidates = (0 until array.length()).map { array.getJSONObject(it) }
+                    .filter { durationSec <= 0 || kotlin.math.abs(it.optDouble("duration", 0.0) - durationSec) <= 5 }
+                    .take(6)
+                for (obj in candidates) {
                     val synced = obj.optString("syncedLyrics")
                     if (synced.isNotBlank()) {
                         val parsed = parseLrc(synced)
@@ -132,8 +153,7 @@ object LyricsClient {
                 }
 
                 // Fallback avec plainLyrics
-                for (i in 0 until limit) {
-                    val obj = array.getJSONObject(i)
+                for (obj in candidates) {
                     val plain = obj.optString("plainLyrics")
                     if (plain.isNotBlank()) {
                         val lines = plain.lines().map { LyricLine(0L, it) }

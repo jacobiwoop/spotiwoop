@@ -56,6 +56,18 @@ object DownloadManager {
         loadCatalog()
     }
 
+    private val AUDIO_EXTENSIONS = listOf("mp3", "m4a", "flac", "opus", "webm")
+
+    /** Extension du vrai format : celle de l'URL (.m4a Audiomack, .mp3 Tubidy), sinon d'après la qualité. */
+    private fun audioExtension(stream: com.spotywoop.kt.playback.ResolvedStream): String {
+        val fromUrl = android.net.Uri.parse(stream.url).lastPathSegment?.substringAfterLast('.', "")?.lowercase()
+        return when {
+            fromUrl in AUDIO_EXTENSIONS -> fromUrl!!
+            stream.quality.contains("FLAC", ignoreCase = true) -> "flac"
+            else -> "mp3"
+        }
+    }
+
     fun isDownloaded(trackId: String): Boolean {
         return _downloads.value.any { it.track.id == trackId }
     }
@@ -77,8 +89,7 @@ object DownloadManager {
                 val resolved = StreamResolver.resolve(track.id, track.artists, track.name, track.durationMs)
 
                 // 2. Téléchargement du fichier audio avec suivi de progression
-                val ext = if (resolved.quality.contains("FLAC", ignoreCase = true)) "flac" else "mp3"
-                val audioFile = File(dir, "${track.id}.$ext")
+                val audioFile = File(dir, "${track.id}.${audioExtension(resolved)}")
 
                 val reqBuilder = Request.Builder().url(resolved.url)
                 resolved.headers.forEach { (k, v) -> reqBuilder.header(k, v) }
@@ -137,9 +148,8 @@ object DownloadManager {
                 saveCatalog()
             } catch (e: Exception) {
                 android.util.Log.e("DownloadManager", "Erreur téléchargement ${track.name}: ${e.message}")
-                val partialFile = File(dir, "${track.id}.mp3")
-                if (partialFile.exists() && !_downloads.value.any { it.track.id == track.id }) {
-                    partialFile.delete()
+                if (!_downloads.value.any { it.track.id == track.id }) {
+                    AUDIO_EXTENSIONS.map { File(dir, "${track.id}.$it") }.filter { it.exists() }.forEach { it.delete() }
                 }
             } finally {
                 _downloadingIds.value = _downloadingIds.value - track.id

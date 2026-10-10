@@ -112,6 +112,8 @@ private fun App(
     var currentTab by rememberSaveable { mutableStateOf(MainTab.Home) }
     var showPlayer by rememberSaveable { mutableStateOf(false) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    // Incrémenté quand on touche le champ de recherche de l'accueil : l'écran Recherche prend le focus.
+    var searchFocusRequest by remember { mutableStateOf(0) }
 
     // Navigation sous-écrans
     var openedAlbum by remember { mutableStateOf<Triple<String, String, String?>?>(null) }
@@ -262,19 +264,17 @@ private fun App(
                         when (currentTab) {
                             MainTab.Home -> {
                                 HomeScreen(
-                                    onPlayTrack = { track ->
-                                        player.playTrackWithAutoRadio(track)
+                                    onPlayTracks = { tracks, index ->
+                                        player.playQueue(tracks, index)
                                         showPlayer = true
                                     },
                                     onTrackOptions = { optionsTrack = it },
-                                    onOpenDownloads = { currentTab = MainTab.Downloads },
-                                    onOpenLibrary = { currentTab = MainTab.Library },
-                                    onOpenSettings = { showSettings = true },
-                                    onSearchCategory = { category ->
-                                        searchVm.onQueryChange(category)
-                                        searchVm.search()
+                                    onOpenSearch = {
+                                        searchFocusRequest++
                                         currentTab = MainTab.Search
                                     },
+                                    onOpenSettings = { showSettings = true },
+                                    currentTrackId = state.current?.id,
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
@@ -282,6 +282,10 @@ private fun App(
                                 SearchScreen(
                                     onPlayTrack = { track ->
                                         player.playTrackWithAutoRadio(track)
+                                        showPlayer = true
+                                    },
+                                    onPlayTracks = { tracks, index ->
+                                        player.playQueue(tracks, index)
                                         showPlayer = true
                                     },
                                     onTrackOptions = { optionsTrack = it },
@@ -292,6 +296,8 @@ private fun App(
                                         openedArtist = Pair(artName, artCover)
                                     },
                                     onOpenSettings = { showSettings = true },
+                                    currentTrackId = state.current?.id,
+                                    focusRequest = searchFocusRequest,
                                     modifier = Modifier.fillMaxSize(),
                                     vm = searchVm,
                                 )

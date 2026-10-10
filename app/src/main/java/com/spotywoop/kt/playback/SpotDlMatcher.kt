@@ -48,37 +48,45 @@ object SpotDlMatcher {
      * @param query Nom de l'artiste + titre
      * @param targetDurationMs Durée exacte issue de Spotify (si disponible)
      */
-    fun findCandidateVideoIds(query: String, targetDurationMs: Long?, limit: Int = 3): List<String> {
-        val targetDurationSec = targetDurationMs?.let { it / 1000L } ?: 0L
-        val cleanQuery = query.trim()
+    /**
+     * @param artists artistes Spotify ("Stromae, Erik Hassle"), principal en premier
+     * @param title titre Spotify ("Alors On Danse - Featuring Erik Hassle")
+     * @return les vidéos plausibles, meilleures d'abord ; vide si la recherche n'a rien rendu.
+     * @throws NoMatchException si YouTube a répondu mais qu'aucune vidéo n'est ce titre.
+     */
+    fun findCandidateVideoIds(artists: String, title: String, targetDurationMs: Long?, limit: Int = 3): List<String> {
+        val targetDurationSec = targetDurationMs?.let { (it + 500) / 1000L } ?: 0L
+        val artistList = artists.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        val primaryArtist = artistList.firstOrNull().orEmpty()
+        // L'artiste et le titre arrivent séparés : avant, on les redécoupait depuis "<artistes> <titre>"
+        // au premier tiret, et « Alors On Danse - Featuring Erik Hassle » devenait « Featuring Erik Hassle ».
+        val searchTitle = title.replace(Regex("""[\(\[].*?[\)\]]"""), "").replace(" - ", " ").trim()
+        val searchQuery = "$primaryArtist $searchTitle official audio".trim()
 
-        val primaryArtist = cleanQuery.substringBefore("-").split(",").firstOrNull()?.trim() ?: ""
-        val titlePart = if (cleanQuery.contains("-")) cleanQuery.substringAfter("-").trim() else cleanQuery
-        val cleanTitle = titlePart.replace(Regex("""[\(\[].*?[\)\]]"""), "").trim()
-
-        val searchQuery = if (primaryArtist.isNotBlank() && cleanTitle.isNotBlank()) {
-            "$primaryArtist $cleanTitle official audio"
-        } else {
-            "$cleanQuery Topic audio"
-        }
-
-        val candidates = searchInnertube(searchQuery)
-        val list = if (candidates.isEmpty()) {
-            searchInnertube("$cleanQuery audio")
-        } else {
-            candidates
-        }
-
-        return scoreAndRank(list, primaryArtist, cleanQuery, targetDurationSec).take(limit)
+        val list = searchInnertube(searchQuery).ifEmpty { searchInnertube("$primaryArtist $searchTitle audio".trim()) }
+        if (list.isEmpty()) return emptyList()
+        val ranked = scoreAndRank(list, primaryArtist, artistList.drop(1), coreTitle(title), "$artists $title", targetDurationSec)
+        if (ranked.isEmpty()) throw NoMatchException("aucune vidéo YouTube ne correspond à '$primaryArtist - $title'")
+        return ranked.take(limit)
     }
 
-    fun findBestVideoId(query: String, targetDurationMs: Long?): String? {
-        return findCandidateVideoIds(query, targetDurationMs, 1).firstOrNull()
-    }
+    class NoMatchException(message: String) : Exception(message)
+
+    /** Titre sans parenthèses ni suffixe (« Alors On Danse - Featuring Erik Hassle » → « alors on danse »). */
+    private fun coreTitle(title: String): String =
+        normalize(title.replace(Regex("""[\(\[].*?[\)\]]"""), "").split(Regex("""\s+[-–—]\s+""")).first())
+
+    private fun normalize(s: String): String =
+        java.text.Normalizer.normalize(s.lowercase(), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{Mn}+"), "")
+            .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
+            .trim()
 
     private fun scoreAndRank(
         candidates: List<RawCandidate>,
         primaryArtist: String,
+        featured: List<String>,
+        coreTitle: String,
         originalQuery: String,
         targetDurationSec: Long,
     ): List<String> {
@@ -89,7 +97,17 @@ object SpotDlMatcher {
         val originalHasRemix = queryLower.contains("remix")
         val originalHasLive = queryLower.contains("live")
 
-        val scored = candidates.map { raw ->
+        val titleWords = coreTitle.split(" ").filter { it.isNotEmpty() }
+        val scored = candidates.filter { raw ->
+            // Rejets francs : une autre chanson (mots du titre absents) ou un autre enregistrement
+            // (plus de 10 s d'écart). Avant, un simple malus laissait passer « La solassitude » (182 s)
+            // pour « Alors on danse » (208 s).
+            val t = " ${normalize(raw.title)} "
+            val sameSong = titleWords.all { t.contains(" $it ") }
+            val sameLength = targetDurationSec <= 0 || raw.durationSec <= 0 || abs(raw.durationSec - targetDurationSec) <= 10
+            if (!sameSong || !sameLength) Log.d(TAG, "Écarté : '${raw.title}' (${raw.durationSec}s) titre=${sameSong} durée=${sameLength}")
+            sameSong && sameLength
+        }.map { raw ->
             var score = 100.0
             val titleLower = raw.title.lowercase()
             val channelLower = raw.channel.lowercase()
@@ -119,6 +137,12 @@ object SpotDlMatcher {
                     diff <= 25L -> score -= 15.0
                     else -> score -= 60.0
                 }
+            }
+
+            // Version avec invité : la vidéo doit le citer (titre ou chaîne), sinon c'est souvent l'original.
+            if (featured.isNotEmpty()) {
+                val where = normalize(raw.title + " " + raw.channel)
+                score += if (featured.all { normalize(it).let { f -> f.isNotEmpty() && where.contains(f) } }) 40.0 else -40.0
             }
 
             // Pénalisation des faux positifs

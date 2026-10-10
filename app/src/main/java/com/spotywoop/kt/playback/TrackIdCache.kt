@@ -27,7 +27,10 @@ object TrackIdCache {
 
     fun init(context: Context) {
         if (cacheFile != null) return
-        cacheFile = File(context.filesDir, "track_id_cache.json")
+        // v2 : l'ancien fichier contenait des vidéos choisies par le matcheur d'avant le 10/10/2026, qui
+        // pouvait retenir une autre chanson (« La solassitude » pour « Alors on danse ») : on repart de zéro.
+        File(context.filesDir, "track_id_cache.json").delete()
+        cacheFile = File(context.filesDir, "track_id_cache_v2.json")
         load()
     }
 

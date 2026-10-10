@@ -19,14 +19,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class SearchTab(val label: String) { Tracks("Tracks"), Albums("Albums"), Artists("Artists"), Playlists("Playlists") }
+enum class SearchTab(val label: String) { All("Tout"), Tracks("Titres"), Albums("Albums"), Artists("Artistes"), Playlists("Playlists") }
 
 data class SearchUiState(
     val query: String = "",
     val loading: Boolean = false,
     val error: String? = null,
     val results: SearchResults? = null,
-    val tab: SearchTab = SearchTab.Tracks,
+    /** Requête des résultats affichés (« Résultats pour … »). */
+    val searchedQuery: String = "",
+    val tab: SearchTab = SearchTab.All,
     val suggestions: List<String> = emptyList(),
     val showSuggestions: Boolean = false,
 )
@@ -87,18 +89,26 @@ class SearchViewModel(private val spotify: SpotifyClient = SpotifyClient()) : Vi
     fun search() {
         val query = _state.value.query.trim()
         if (query.isEmpty()) return
-        _state.update { it.copy(showSuggestions = false, suggestions = emptyList()) }
+        _state.update { it.copy(showSuggestions = false, suggestions = emptyList(), tab = SearchTab.All) }
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
             try {
                 val results = spotify.search(query)
-                _state.update { it.copy(loading = false, results = results) }
+                _state.update { it.copy(loading = false, results = results, searchedQuery = query) }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
                 _state.update { it.copy(loading = false, error = e.message ?: e.javaClass.simpleName) }
             }
+        }
+    }
+
+    /** Charge une playlist Spotify par l'API du site puis rend ses titres pour la lecture. */
+    fun playPlaylist(id: String, onTracks: (List<com.spotywoop.kt.data.TrackResult>) -> Unit, onError: () -> Unit) {
+        viewModelScope.launch {
+            val tracks = runCatching { com.spotywoop.kt.data.SpotiwoopApi.collectionTracks("playlist", "sp:$id") }.getOrNull()
+            if (tracks.isNullOrEmpty()) onError() else onTracks(tracks)
         }
     }
 }

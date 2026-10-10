@@ -40,6 +40,8 @@ data class NowPlaying(
     val album: String,
     val cover: String?,
     val explicit: Boolean,
+    /** Durée annoncée par la source (Spotify, Audiomack), 0 si inconnue. */
+    val durationMs: Long = 0,
 )
 
 enum class PlaybackMode {
@@ -215,10 +217,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
         viewModelScope.launch {
             try {
-                val query = "${track.artists} ${track.name}"
-                val radioTracks = YouTubeRadioClient.fetchRadioTracks(query, limit = 15)
-                // YouTube Mix place toujours le morceau graine en position 0 : on l'élimine systématiquement
-                val candidates = if (radioTracks.isNotEmpty()) radioTracks.drop(1) else emptyList()
+                val candidates = suggestions(track.id, track.artists, track.name, track.durationMs, 15)
                 val cleanSeed = cleanSongTitle(track.name)
                 val next5 = candidates.filter { candidate ->
                     val cleanCandidate = cleanSongTitle(candidate.name)
@@ -294,7 +293,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     /**
      * Lance la radio explicite basée sur le morceau en cours d'écoute :
-     * Récupère 25 titres similaires fixes via YouTube Mix (Innertube), remplace la file et lance la lecture.
+     * Radio du titre : le titre en cours puis ses suggestions (Audiomack d'abord, YouTube Mix en secours).
      */
     fun startRadioForCurrentTrack() {
         if (!OfflineSkipper.isOnline(getApplication())) {
@@ -304,8 +303,9 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         val now = _state.value.current ?: return
         viewModelScope.launch {
             _state.update { it.copy(loadingRadio = true) }
-            val query = "${now.artist} ${now.title}"
-            val tracks = YouTubeRadioClient.fetchRadioTracks(query, limit = 25)
+            // La file repart du titre en cours, suivi de ses suggestions.
+            val suggested = suggestions(now.id, now.artist, now.title, now.durationMs, 24)
+            val tracks = if (suggested.isEmpty()) emptyList() else listOf(now.toTrackResult()) + suggested
 
             if (tracks.isNotEmpty()) {
                 val items = tracks.map { it.toMediaItem() }
@@ -381,6 +381,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 album = md.albumTitle?.toString().orEmpty(),
                 cover = md.artworkUri?.toString(),
                 explicit = md.extras?.getBoolean(EXTRA_EXPLICIT) == true,
+                durationMs = md.extras?.getLong("durationMs") ?: 0,
             )
         }
         val trackChanged = current?.id != _state.value.current?.id
@@ -437,16 +438,39 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     /**
      * Radio Auto Glissante : recharge 5 morceaux basés sur le DERNIER morceau de la file.
      */
+    /**
+     * Suggestions pour un titre : Audiomack d'abord (titres liés via l'API du site, qui se rabat
+     * elle-même sur la radio Spotify de l'artiste), puis YouTube Mix si l'API n'a rien ou ne répond pas.
+     * Le titre de départ n'est jamais rendu.
+     */
+    private suspend fun suggestions(seedId: String, artists: String, title: String, durationMs: Long, limit: Int): List<TrackResult> {
+        val viaApi = runCatching {
+            kotlinx.coroutines.withTimeout(10_000) { com.spotywoop.kt.data.SpotiwoopApi.radio(seedId, artists, title, durationMs) }
+        }.onFailure { android.util.Log.w("PlayerViewModel", "Suggestions Audiomack indisponibles : ${it.message}") }
+            .getOrDefault(emptyList())
+            .filter { it.id != seedId }
+        if (viaApi.isNotEmpty()) {
+            android.util.Log.i("PlayerViewModel", "Suggestions : ${viaApi.size} titres via l'API (Audiomack/Spotify) pour '$artists - $title'")
+            return viaApi.take(limit)
+        }
+        // YouTube Mix place le titre de départ en tête : on le retire.
+        val mix = YouTubeRadioClient.fetchRadioTracks("$artists $title", limit = limit + 1).drop(1)
+        android.util.Log.i("PlayerViewModel", "Suggestions : ${mix.size} titres via YouTube Mix (secours) pour '$artists - $title'")
+        return mix
+    }
+
+    private fun NowPlaying.toTrackResult() = TrackResult(
+        id = id, name = title, artists = artist, album = album, durationMs = durationMs, cover = cover, isExplicit = explicit,
+    )
+
     private fun triggerAutoRadioRolling(c: MediaController) {
         isPrefetchingAutoplay = true
         viewModelScope.launch {
             try {
                 val queue = _state.value.radioQueue
                 val lastTrack = queue.lastOrNull()
-                val seedQuery = if (lastTrack != null) "${lastTrack.artists} ${lastTrack.name}" else "${_state.value.current?.artist} ${_state.value.current?.title}"
-                val suggestions = YouTubeRadioClient.fetchRadioTracks(seedQuery, limit = 15)
-                // Élimine le premier élément qui est le seed lui-même
-                val candidates = if (suggestions.isNotEmpty()) suggestions.drop(1) else emptyList()
+                val seed = lastTrack ?: _state.value.current?.toTrackResult() ?: return@launch
+                val candidates = suggestions(seed.id, seed.artists, seed.name, seed.durationMs, 15)
                 val existingIds = queue.map { it.id }.toSet()
                 val existingTitles = queue.map { cleanSongTitle(it.name) }.toSet()
 
@@ -486,9 +510,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         isPrefetchingAutoplay = true
         viewModelScope.launch {
             try {
-                val query = "${current.artist} ${current.title}"
-                val suggestions = YouTubeRadioClient.fetchRadioTracks(query, limit = 10)
-                val candidates = if (suggestions.isNotEmpty()) suggestions.drop(1) else emptyList()
+                val candidates = suggestions(current.id, current.artist, current.title, current.durationMs, 10)
                 val cleanCurrent = cleanSongTitle(current.title)
                 val existingIds = _state.value.radioQueue.map { it.id }.toSet() + current.id
                 val newTracks = candidates.filterNot { candidate ->
@@ -537,6 +559,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 artist = track.artist,
                 title = track.title,
                 album = track.album,
+                durationSec = (track.durationMs + 500) / 1000,
             )
             if (_state.value.current?.id == track.id) {
                 _state.update { it.copy(lyrics = res, loadingLyrics = false) }

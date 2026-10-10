@@ -4,6 +4,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.text.font.FontWeight
+import com.spotywoop.kt.R
 
 // Palette relevée sur SpotiFLAC desktop : fond quasi noir, cartes à bord fin, accent or.
 object SpotyColors {
@@ -18,6 +24,21 @@ object SpotyColors {
     val GoldDark = Color(0xFF6B5210)
     val SpotifyGreen = Color(0xFF1ED760)
     val Explicit = Color(0xFFDC2626)
+    // Vert du logo, celui du site web.
+    val Accent = Color(0xFF95E800)
+    val Up = Color(0xFF1ED760)
+    val Down = Color(0xFFFF6B6B)
+}
+
+// Polices du site : Outfit pour les titres, DM Sans pour le texte (polices variables).
+@OptIn(ExperimentalTextApi::class)
+private fun variable(res: Int, vararg weights: FontWeight) = FontFamily(
+    weights.map { w -> Font(res, weight = w, variationSettings = FontVariation.Settings(FontVariation.weight(w.weight))) },
+)
+
+object SpotyFonts {
+    val Display = variable(R.font.outfit, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold, FontWeight.ExtraBold)
+    val Text = variable(R.font.dm_sans, FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold)
 }
 
 private val scheme = darkColorScheme(

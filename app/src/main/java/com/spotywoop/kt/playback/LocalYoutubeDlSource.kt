@@ -98,7 +98,7 @@ class LocalYoutubeDlSource(private val context: Context) : StreamSource {
         )
     }
 
-    fun resolveWithQuery(query: String, durationMs: Long? = null): ResolvedStream {
+    fun resolveWithQuery(query: String, durationMs: Long? = null, artists: String? = null, title: String? = null): ResolvedStream {
         if (!ensureInitialized(context)) {
             throw IOException("Moteur natif non initialisé")
         }
@@ -111,7 +111,11 @@ class LocalYoutubeDlSource(private val context: Context) : StreamSource {
         // Étape 2 (Priorité N°1) : Matching haute précision SpotDL via YouTube Music (Topic / Official Audio)
         try {
             Log.d(TAG, "Recherche SpotDL Music pour '$query' (durée cible: ${durationMs?.let { it / 1000 }}s)...")
-            val candidateIds = SpotDlMatcher.findCandidateVideoIds(query, durationMs, limit = 4)
+            val candidateIds = if (!artists.isNullOrBlank() && !title.isNullOrBlank()) {
+                SpotDlMatcher.findCandidateVideoIds(artists, title, durationMs, limit = 4)
+            } else {
+                emptyList()
+            }
             for (videoId in candidateIds) {
                 try {
                     val stream = resolveWithVideoId(videoId)
@@ -121,6 +125,10 @@ class LocalYoutubeDlSource(private val context: Context) : StreamSource {
                     Log.w(TAG, "Échec extraction pour $videoId: ${e.message}")
                 }
             }
+        } catch (e: SpotDlMatcher.NoMatchException) {
+            // YouTube a répondu sans proposer ce titre : la recherche « au premier résultat » qui suit
+            // jouerait une autre chanson. Mieux vaut laisser l'autre source ou l'aperçu.
+            throw IOException(e.message)
         } catch (e: Exception) {
             Log.w(TAG, "Échec SpotDL Matcher: ${e.message}, essai ytsearch direct...")
         }

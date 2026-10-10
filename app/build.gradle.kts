@@ -1,3 +1,10 @@
+import java.util.Properties
+
+// Réglages locaux non versionnés (le dépôt est public) : onlineResolve.url, onlineResolve.apiKey.
+val localProps = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
@@ -11,8 +18,14 @@ android {
         applicationId = "com.spotywoop.kt"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.1.9"
+        versionCode = 11
+        versionName = "0.2.0"
+
+        buildConfigField(
+            "String", "ONLINE_RESOLVE_URL",
+            "\"${localProps.getProperty("onlineResolve.url", "https://online-resolve.vercel.app/api/resolve")}\"",
+        )
+        buildConfigField("String", "ONLINE_RESOLVE_API_KEY", "\"${localProps.getProperty("onlineResolve.apiKey", "")}\"")
     }
 
     splits {
@@ -81,8 +94,6 @@ dependencies {
     implementation(libs.media3.exoplayer.dash)
     implementation(libs.media3.exoplayer.hls)
     implementation(libs.media3.session)
-    implementation(libs.androidx.security.crypto)
-    implementation(libs.androidx.browser)
     implementation(libs.androidx.palette)
 
     // yt-dlp natif sur Android (moteur Seal)
