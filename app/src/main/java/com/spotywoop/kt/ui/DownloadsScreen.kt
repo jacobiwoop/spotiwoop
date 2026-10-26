@@ -210,8 +210,9 @@ fun DownloadsScreen(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(Icons.Rounded.MusicNote, contentDescription = null, tint = SpotyColors.TextMuted)
-                            val cover = item.localCoverPath ?: track.cover
-                            if (!cover.isNullOrBlank()) {
+                            // Pochette locale passée en File : son nom peut contenir « : » (am:123_cover.jpg).
+                            val cover: Any? = item.localCoverPath?.let { java.io.File(it) } ?: track.cover?.takeIf { it.isNotBlank() }
+                            if (cover != null) {
                                 AsyncImage(
                                     model = cover,
                                     contentDescription = null,

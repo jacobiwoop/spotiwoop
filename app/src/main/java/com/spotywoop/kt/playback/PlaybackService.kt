@@ -98,8 +98,10 @@ class PlaybackService : MediaSessionService() {
         val durationMs = spec.uri.getQueryParameter("durationMs")?.toLongOrNull()
         val stream = StreamResolver.resolve(trackId, artist, title, durationMs)
         android.util.Log.i("PlaybackService", "resolveSpec: URL=${stream.url}, headers=${stream.headers}")
+        // Fichier téléchargé : son nom peut contenir « : » (am:123.m4a), qu'Uri.parse prendrait pour un schéma.
+        val uri = if (stream.url.startsWith("/")) Uri.fromFile(java.io.File(stream.url)) else Uri.parse(stream.url)
         return spec.buildUpon()
-            .setUri(Uri.parse(stream.url))
+            .setUri(uri)
             .setHttpRequestHeaders(spec.httpRequestHeaders + stream.headers)
             .build()
     }
