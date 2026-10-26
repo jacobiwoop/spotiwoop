@@ -458,8 +458,12 @@ fun NowPlayingScreen(
                     color = SpotyColors.SpotifyGreen,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    // Le texte prend la place restante sans jamais écraser les boutons.
+                    modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
                 IconButton(
                     icon = Icons.Rounded.Share,
                     tint = Color.White.copy(alpha = 0.7f),

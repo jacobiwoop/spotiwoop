@@ -148,6 +148,7 @@ fun HomeScreen(
     onTrackOptions: (TrackResult) -> Unit = {},
     onOpenSearch: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenCollection: (CollectionNav) -> Unit = {},
     currentTrackId: String? = null,
     modifier: Modifier = Modifier,
     vm: DiscoverViewModel = viewModel(),
@@ -157,12 +158,6 @@ fun HomeScreen(
     val context = LocalContext.current
     val data = state.data[state.genre]
     var fullTop by remember { mutableStateOf(false) }
-    val playCard: (ApiCard) -> Unit = { card ->
-        Toast.makeText(context, "Chargement de « ${card.title} »…", Toast.LENGTH_SHORT).show()
-        vm.playCollection(card, onTracks = { onPlayTracks(it, 0) }) {
-            Toast.makeText(context, "Impossible de charger ce contenu.", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     Column(
         modifier
@@ -263,7 +258,7 @@ fun HomeScreen(
                                 meta = if (c.plays > 0) "${compactCount(c.plays)} écoutes" else null,
                                 explicit = c.explicit,
                                 stack = true,
-                                onClick = { playCard(c) },
+                                onClick = { onOpenCollection(CollectionNav(c.kind.ifBlank { "album" }, c.ref, c.title, c.image)) },
                                 modifier = m,
                             )
                         }

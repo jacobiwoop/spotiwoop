@@ -61,8 +61,8 @@ fun SearchScreen(
     onPlayTrack: (TrackResult) -> Unit,
     onPlayTracks: (List<TrackResult>, Int) -> Unit = { list, i -> list.getOrNull(i)?.let(onPlayTrack) },
     onTrackOptions: (TrackResult) -> Unit = {},
-    onOpenAlbum: (albumName: String, artistName: String, coverUrl: String?) -> Unit = { _, _, _ -> },
-    onOpenArtist: (artistName: String, coverUrl: String?) -> Unit = { _, _ -> },
+    onOpenAlbum: (CollectionNav) -> Unit = {},
+    onOpenArtist: (ArtistNav) -> Unit = {},
     onOpenSettings: () -> Unit = {},
     currentTrackId: String? = null,
     focusRequest: Int = 0,
@@ -157,8 +157,8 @@ private fun LazyListScope.results(
     onTab: (SearchTab) -> Unit,
     onPlayTracks: (List<TrackResult>, Int) -> Unit,
     onTrackOptions: (TrackResult) -> Unit,
-    onOpenAlbum: (String, String, String?) -> Unit,
-    onOpenArtist: (String, String?) -> Unit,
+    onOpenAlbum: (CollectionNav) -> Unit,
+    onOpenArtist: (ArtistNav) -> Unit,
     onPlayPlaylist: (PlaylistResult) -> Unit,
 ) {
     val empty = results.tracks.isEmpty() && results.albums.isEmpty() && results.artists.isEmpty()
@@ -182,12 +182,12 @@ private fun LazyListScope.results(
             image = a.cover,
             subtitle = listOfNotNull(a.artists, a.year?.toString()).joinToString(" · "),
             stack = true,
-            onClick = { onOpenAlbum(a.name, a.artists, a.cover) },
+            onClick = { onOpenAlbum(CollectionNav("album", spRef(a.id), a.name, a.cover, a.artists)) },
             modifier = m,
         )
     }
     fun artists(key: String, list: List<ArtistResult>) = webGrid(list, key) { a, m ->
-        WebCollectionCard(title = a.name, image = a.cover, round = true, onClick = { onOpenArtist(a.name, a.cover) }, modifier = m)
+        WebCollectionCard(title = a.name, image = a.cover, round = true, onClick = { onOpenArtist(ArtistNav(spRef(a.id, a.name), a.name, a.cover)) }, modifier = m)
     }
     fun playlists(key: String, list: List<PlaylistResult>) = webGrid(list, key) { p, m ->
         WebCollectionCard(title = p.name, image = p.cover, onClick = { onPlayPlaylist(p) }, modifier = m)
@@ -208,7 +208,7 @@ private fun LazyListScope.results(
             when {
                 namedArtist != null -> {
                     header("h-best", "Meilleur résultat")
-                    item(key = "best") { BestResult(namedArtist.name, namedArtist.cover, "ARTISTE", round = true) { onOpenArtist(namedArtist.name, namedArtist.cover) } }
+                    item(key = "best") { BestResult(namedArtist.name, namedArtist.cover, "ARTISTE", round = true) { onOpenArtist(ArtistNav(spRef(namedArtist.id, namedArtist.name), namedArtist.name, namedArtist.cover)) } }
                 }
                 bestTrack != null -> {
                     header("h-best", "Meilleur résultat")
@@ -322,4 +322,11 @@ private fun SuggestionsList(suggestions: List<String>, onSelect: (String) -> Uni
             }
         }
     }
+}
+
+/** Référence de l'API pour un identifiant Spotify ; sans identifiant, recherche par nom (artistes) ou par titre (albums). */
+private fun spRef(id: String, name: String? = null): String = when {
+    id.isNotBlank() -> "sp:${id.removePrefix("sp:")}"
+    name != null -> "name:$name"
+    else -> ""
 }

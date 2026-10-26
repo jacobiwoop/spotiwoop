@@ -1,5 +1,7 @@
 package com.spotywoop.kt
 
+import com.spotywoop.kt.ui.CollectionNav
+import com.spotywoop.kt.ui.ArtistNav
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
@@ -43,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -116,8 +119,9 @@ private fun App(
     var searchFocusRequest by remember { mutableStateOf(0) }
 
     // Navigation sous-écrans
-    var openedAlbum by remember { mutableStateOf<Triple<String, String, String?>?>(null) }
-    var openedArtist by remember { mutableStateOf<Pair<String, String?>?>(null) }
+    // Pages artiste / album empilées : « Retour » revient à la précédente (ArtistNav ou CollectionNav).
+    val pages = remember { mutableStateListOf<Any>() }
+    fun openPage(page: Any) { if (pages.lastOrNull() != page) pages.add(page) }
     var optionsTrack by remember { mutableStateOf<TrackResult?>(null) }
 
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -230,34 +234,29 @@ private fun App(
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 // Écran actif
                 when {
-                    openedAlbum != null -> {
-                        val (name, artist, cover) = openedAlbum!!
-                        AlbumScreen(
-                            albumName = name,
-                            artistName = artist,
-                            coverUrl = cover,
-                            onBack = { openedAlbum = null },
+                    pages.isNotEmpty() -> when (val page = pages.last()) {
+                        is CollectionNav -> AlbumScreen(
+                            nav = page,
+                            currentTrackId = state.current?.id,
+                            onBack = { pages.removeAt(pages.lastIndex) },
                             onPlayTracks = { tracks, index ->
                                 player.playQueue(tracks, index)
                                 showPlayer = true
                             },
                             onTrackOptions = { optionsTrack = it },
+                            onOpenArtist = { openPage(it) },
                         )
-                    }
-                    openedArtist != null -> {
-                        val (name, cover) = openedArtist!!
-                        ArtistScreen(
-                            artistName = name,
-                            artistCover = cover,
-                            onBack = { openedArtist = null },
+                        is ArtistNav -> ArtistScreen(
+                            nav = page,
+                            currentTrackId = state.current?.id,
+                            onBack = { pages.removeAt(pages.lastIndex) },
                             onPlayTracks = { tracks, index ->
                                 player.playQueue(tracks, index)
                                 showPlayer = true
                             },
                             onTrackOptions = { optionsTrack = it },
-                            onOpenAlbum = { albName, artName, albCover ->
-                                openedAlbum = Triple(albName, artName, albCover)
-                            }
+                            onOpenCollection = { openPage(it) },
+                            onOpenArtist = { openPage(it) },
                         )
                     }
                     else -> {
@@ -274,6 +273,7 @@ private fun App(
                                         currentTab = MainTab.Search
                                     },
                                     onOpenSettings = { showSettings = true },
+                                    onOpenCollection = { openPage(it) },
                                     currentTrackId = state.current?.id,
                                     modifier = Modifier.fillMaxSize(),
                                 )
@@ -289,12 +289,8 @@ private fun App(
                                         showPlayer = true
                                     },
                                     onTrackOptions = { optionsTrack = it },
-                                    onOpenAlbum = { albName, artName, albCover ->
-                                        openedAlbum = Triple(albName, artName, albCover)
-                                    },
-                                    onOpenArtist = { artName, artCover ->
-                                        openedArtist = Pair(artName, artCover)
-                                    },
+                                    onOpenAlbum = { openPage(it) },
+                                    onOpenArtist = { openPage(it) },
                                     onOpenSettings = { showSettings = true },
                                     currentTrackId = state.current?.id,
                                     focusRequest = searchFocusRequest,
@@ -339,8 +335,7 @@ private fun App(
             BottomNav(
                 currentTab = currentTab,
                 onTabSelect = {
-                    openedAlbum = null
-                    openedArtist = null
+                    pages.clear()
                     currentTab = it
                 }
             )
@@ -389,10 +384,10 @@ private fun App(
                     showPlayer = true
                 },
                 onNavigateToArtist = { artistName ->
-                    openedArtist = Pair(artistName, null)
+                    openPage(ArtistNav("name:$artistName", artistName))
                 },
                 onNavigateToAlbum = { albumName, artistName ->
-                    openedAlbum = Triple(albumName, artistName, null)
+                    openPage(CollectionNav("album", "", albumName, artist = artistName))
                 }
             )
         }
@@ -402,9 +397,8 @@ private fun App(
     BackHandler(enabled = optionsTrack != null) { optionsTrack = null }
     BackHandler(enabled = showSettings) { showSettings = false }
     BackHandler(enabled = showPlayer && !showSettings) { showPlayer = false }
-    BackHandler(enabled = openedAlbum != null) { openedAlbum = null }
-    BackHandler(enabled = openedArtist != null) { openedArtist = null }
-    BackHandler(enabled = currentTab != MainTab.Home && !showPlayer && !showSettings && openedAlbum == null && openedArtist == null) {
+    BackHandler(enabled = pages.isNotEmpty() && !showPlayer && !showSettings) { pages.removeAt(pages.lastIndex) }
+    BackHandler(enabled = currentTab != MainTab.Home && !showPlayer && !showSettings && pages.isEmpty()) {
         currentTab = MainTab.Home
     }
 }

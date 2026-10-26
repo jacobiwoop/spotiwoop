@@ -1,8 +1,8 @@
 package com.spotywoop.kt.ui
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,9 +23,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,257 +32,206 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.spotywoop.kt.data.SpotifyClient
+import com.spotywoop.kt.data.CollectionPage
+import com.spotywoop.kt.data.SpotiwoopApi
 import com.spotywoop.kt.data.TrackResult
-import com.spotywoop.kt.ui.theme.ColorExtractor
 import com.spotywoop.kt.ui.theme.SpotyColors
+import com.spotywoop.kt.ui.theme.SpotyFonts
+import java.text.NumberFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+/** Album ou playlist à ouvrir : [ref] vide quand on ne connaît que le nom (menu ⋮ d'un titre). */
+data class CollectionNav(val kind: String, val ref: String, val title: String, val image: String? = null, val artist: String = "")
 
 /**
- * Écran Album façon Spotify Mobile :
- * - Grande pochette avec extraction de couleur dynamique
- * - Titre de l'album, artiste, liste des morceaux numérotés
- * - Lecture séquentielle de l'album
+ * Page album ou playlist, comme sur le site : pochette, date, nombre de titres et durée, écoutes,
+ * boutons Écouter et Aléatoire, tous les titres dans l'ordre, maison de disques.
  */
 @Composable
 fun AlbumScreen(
-    albumName: String,
-    artistName: String,
-    coverUrl: String? = null,
+    nav: CollectionNav,
+    currentTrackId: String?,
     onBack: () -> Unit,
     onPlayTracks: (List<TrackResult>, Int) -> Unit,
     onTrackOptions: (TrackResult) -> Unit,
+    onOpenArtist: (ArtistNav) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    var dominantColor by remember { mutableStateOf(Color(0xFF282828)) }
-    val animatedBg by animateColorAsState(dominantColor, animationSpec = tween(600), label = "AlbumBg")
+    var page by remember(nav) { mutableStateOf<CollectionPage?>(null) }
+    var error by remember(nav) { mutableStateOf<String?>(null) }
+    var attempt by remember(nav) { mutableIntStateOf(0) }
 
-    var loading by remember { mutableStateOf(true) }
-    var tracks by remember { mutableStateOf<List<TrackResult>>(emptyList()) }
-    var effectiveCover by remember { mutableStateOf(coverUrl) }
-
-    LaunchedEffect(coverUrl) {
-        if (!coverUrl.isNullOrBlank()) {
-            dominantColor = ColorExtractor.extractDominantColor(context, coverUrl)
-        }
-    }
-
-    LaunchedEffect(albumName, artistName) {
-        loading = true
+    LaunchedEffect(nav, attempt) {
+        error = null
         try {
-            val client = SpotifyClient()
-            val query = "album:\"$albumName\" artist:\"$artistName\""
-            val results = client.search(query, limit = 30)
-            val foundTracks = results.tracks.filter {
-                it.album.contains(albumName, ignoreCase = true) || it.artists.contains(artistName, ignoreCase = true)
-            }.ifEmpty { results.tracks }
-
-            tracks = foundTracks
-            if (effectiveCover == null && foundTracks.isNotEmpty()) {
-                val cov = foundTracks.firstOrNull()?.cover
-                effectiveCover = cov
-                if (cov != null) {
-                    dominantColor = ColorExtractor.extractDominantColor(context, cov)
-                }
-            }
-        } catch (_: Exception) {
-            // Fallback recherche générique
-            try {
-                val client = SpotifyClient()
-                val results = client.search("$albumName $artistName", limit = 25)
-                tracks = results.tracks
-            } catch (_: Exception) { }
-        } finally {
-            loading = false
+            val ref = nav.ref.ifBlank { SpotiwoopApi.findAlbumRef(nav.title, nav.artist) ?: throw NoSuchElementException() }
+            page = SpotiwoopApi.collection(nav.kind, ref)
+        } catch (e: NoSuchElementException) {
+            error = "Album introuvable."
+        } catch (e: Exception) {
+            error = "Chargement impossible. Vérifie ta connexion."
         }
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(animatedBg, Color(0xFF121212), Color(0xFF121212)),
-                    startY = 0f,
-                    endY = 1200f,
-                )
-            )
-            .statusBarsPadding()
+    Box(modifier.fillMaxSize().background(SpotyColors.Background)) {
+        val p = page
+        when {
+            p != null -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 140.dp)) {
+                item(key = "hero") { CollectionHero(p, onPlayTracks, onOpenArtist) }
+                itemsIndexed(p.tracks, key = { i, t -> "t-$i-${t.id}" }) { i, t ->
+                    WebTrackRow(
+                        track = t,
+                        number = "${i + 1}",
+                        current = t.id == currentTrackId,
+                        onClick = { onPlayTracks(p.tracks, i) },
+                        onOptions = { onTrackOptions(t) },
+                    )
+                }
+                if (p.totalTracks > p.tracks.size) {
+                    item(key = "partial") {
+                        Text(
+                            "${p.tracks.size} titres affichés sur ${p.totalTracks}.",
+                            color = PageText3, fontSize = 13.sp, fontFamily = SpotyFonts.Text, textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        )
+                    }
+                }
+                val footer = listOfNotNull(p.label, p.copyright).joinToString(" · ")
+                if (footer.isNotBlank()) {
+                    item(key = "label") {
+                        Text(
+                            footer, color = PageText3, fontSize = 13.sp, lineHeight = 18.sp, fontFamily = SpotyFonts.Text,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
+                        )
+                    }
+                }
+            }
+            error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                WebState(text = error!!, action = "Réessayer", onAction = { attempt++ })
+            }
+            else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = SpotyColors.Accent)
+            }
+        }
+        BackButton(onBack)
+    }
+}
+
+@Composable
+private fun CollectionHero(p: CollectionPage, onPlayTracks: (List<TrackResult>, Int) -> Unit, onOpenArtist: (ArtistNav) -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 56.dp, bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Column(Modifier.fillMaxSize()) {
-            // Barre de retour supérieure
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Retour", tint = Color.White)
-                }
+        AsyncImage(
+            model = p.image,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.size(230.dp).shadow(16.dp, RoundedCornerShape(8.dp)).clip(RoundedCornerShape(8.dp)).background(PageSurface),
+        )
+        Spacer(Modifier.height(6.dp))
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Kicker(if (p.kind == "album") "Album" else "Playlist")
+            Text(
+                p.title, color = SpotyColors.TextPrimary, fontSize = 30.sp, lineHeight = 34.sp,
+                fontFamily = SpotyFonts.Display, fontWeight = FontWeight.ExtraBold,
+            )
+            p.description?.let { Text(it, color = SpotyColors.TextSecondary, fontSize = 14.sp, lineHeight = 20.sp, fontFamily = SpotyFonts.Text) }
+            p.subtitle?.let { name ->
+                val ref = p.subtitleRef ?: if (p.kind == "album") "name:$name" else null
+                Text(
+                    name, color = SpotyColors.TextPrimary, fontSize = 15.sp, fontFamily = SpotyFonts.Text, fontWeight = FontWeight.Bold,
+                    modifier = if (ref != null) Modifier.clickable { onOpenArtist(ArtistNav(ref, name)) } else Modifier,
+                )
             }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 120.dp),
-            ) {
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        // Pochette d'album
-                        Box(
-                            modifier = Modifier
-                                .size(200.dp)
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(SpotyColors.SurfaceHigh),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Rounded.MusicNote, contentDescription = null, tint = SpotyColors.TextMuted, modifier = Modifier.size(64.dp))
-                            if (!effectiveCover.isNullOrBlank()) {
-                                AsyncImage(
-                                    model = effectiveCover,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = albumName,
-                            color = Color.White,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = artistName,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "Album • ${tracks.size} titres",
-                            color = Color.White.copy(alpha = 0.5f),
-                            fontSize = 12.sp,
-                        )
-
-                        Spacer(Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.End,
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(CircleShape)
-                                    .background(SpotyColors.SpotifyGreen)
-                                    .clickable(enabled = tracks.isNotEmpty()) {
-                                        onPlayTracks(tracks, 0)
-                                    },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    Icons.Rounded.PlayArrow,
-                                    contentDescription = "Lire tout l'album",
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(34.dp),
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(16.dp))
-                    }
-                }
-
-                if (loading) {
-                    item {
-                        Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = SpotyColors.SpotifyGreen)
-                        }
-                    }
-                } else if (tracks.isEmpty()) {
-                    item {
-                        Text(
-                            text = "Aucun morceau trouvé pour cet album.",
-                            color = Color.White.copy(alpha = 0.5f),
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(24.dp),
-                        )
-                    }
-                } else {
-                    itemsIndexed(tracks, key = { index, t -> "${t.id}_$index" }) { index, track ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onPlayTracks(tracks, index) }
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = "${index + 1}",
-                                color = Color.White.copy(alpha = 0.6f),
-                                fontSize = 14.sp,
-                                modifier = Modifier.width(28.dp),
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = track.name,
-                                    color = Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    text = track.artists,
-                                    color = Color.White.copy(alpha = 0.6f),
-                                    fontSize = 12.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                            Text(
-                                text = track.durationLabel,
-                                color = Color.White.copy(alpha = 0.5f),
-                                fontSize = 12.sp,
-                            )
-                            IconButton(onClick = { onTrackOptions(track) }) {
-                                Icon(
-                                    Icons.Rounded.MoreVert,
-                                    contentDescription = "Options",
-                                    tint = Color.White.copy(alpha = 0.7f),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            val meta = listOfNotNull(
+                p.date?.let(::frenchDate),
+                "${p.totalTracks.takeIf { it > 0 } ?: p.tracks.size} titres" + (totalDuration(p.tracks)?.let { ", $it" } ?: ""),
+                p.plays.takeIf { it > 0 }?.let { "${compactCount(it)} écoutes" },
+                p.followers.takeIf { it > 0 }?.let { "${fullCount(it)} abonnés" },
+            )
+            Text(meta.joinToString("  •  "), color = SpotyColors.TextSecondary, fontSize = 13.sp, fontFamily = SpotyFonts.Text)
+        }
+        Spacer(Modifier.height(4.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PillButton("Écouter", Icons.Rounded.PlayArrow, primary = true, enabled = p.tracks.isNotEmpty()) { onPlayTracks(p.tracks, 0) }
+            PillButton("Aléatoire", Icons.Rounded.Shuffle, primary = false, enabled = p.tracks.isNotEmpty()) { onPlayTracks(p.tracks.shuffled(), 0) }
         }
     }
+}
+
+// ---------- Éléments communs aux pages album et artiste ----------
+
+internal val PageSurface = Color(0xFF1E1E1E)
+internal val PageText3 = Color(0xFF8A8A8A)
+
+@Composable
+internal fun Kicker(text: String) {
+    Text(
+        text.uppercase(Locale.FRENCH), color = SpotyColors.TextSecondary, fontSize = 12.sp,
+        fontFamily = SpotyFonts.Display, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp,
+    )
+}
+
+/** Bouton rond du site : vert plein (« Écouter ») ou contour (« Aléatoire », « Radio de l'artiste »). */
+@Composable
+internal fun PillButton(label: String, icon: ImageVector, primary: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
+    val shape = CircleShape
+    Row(
+        Modifier
+            .clip(shape)
+            .then(if (primary) Modifier.background(SpotyColors.Accent) else Modifier.border(BorderStroke(1.dp, Color(0xFF555555)), shape))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        val color = if (primary) Color(0xFF111111) else SpotyColors.TextPrimary
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+        Text(label, color = color, fontSize = 15.sp, fontFamily = SpotyFonts.Text, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+internal fun BackButton(onBack: () -> Unit) {
+    IconButton(
+        onClick = onBack,
+        modifier = Modifier.statusBarsPadding().padding(8.dp).size(40.dp).clip(CircleShape).background(Color(0x99000000)),
+    ) {
+        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Retour", tint = Color.White)
+    }
+}
+
+/** Nombre complet à la française : 8 283 759. */
+internal fun fullCount(n: Long): String = NumberFormat.getIntegerInstance(Locale.FRENCH).format(n)
+
+/** « 2026-04-03 » → « 3 avril 2026 » ; une année seule reste telle quelle. */
+private fun frenchDate(s: String): String = runCatching {
+    LocalDate.parse(s.take(10)).format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.FRENCH))
+}.getOrDefault(s.take(4))
+
+/** Durée totale : « 42 min » ou « 1 h 12 min ». */
+private fun totalDuration(tracks: List<TrackResult>): String? {
+    val min = (tracks.sumOf { it.durationMs } / 60_000).toInt()
+    if (min <= 0) return null
+    return if (min >= 60) "${min / 60} h ${min % 60} min" else "$min min"
 }

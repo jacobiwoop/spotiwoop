@@ -30,6 +30,43 @@ data class ApiCard(
     val plays: Long,
 )
 
+/** Fiche artiste du site : Spotify, artistes similaires d'Audiomack. */
+data class ArtistPage(
+    val ref: String,
+    val name: String,
+    val image: String?,
+    val banner: String?,
+    val followers: Long,
+    val monthlyListeners: Long,
+    val bio: String?,
+    val topCities: List<TopCity>,
+    val topTracks: List<TrackResult>,
+    val albums: List<ApiCard>,
+    val singles: List<ApiCard>,
+    val related: List<ApiCard>,
+    val links: List<Pair<String, String>>,
+)
+
+data class TopCity(val city: String, val country: String, val listeners: Long)
+
+/** Album ou playlist du site, avec ses informations de sortie. */
+data class CollectionPage(
+    val kind: String,
+    val ref: String,
+    val title: String,
+    val subtitle: String?,
+    val subtitleRef: String?,
+    val image: String?,
+    val description: String?,
+    val date: String?,
+    val label: String?,
+    val copyright: String?,
+    val plays: Long,
+    val followers: Long,
+    val totalTracks: Int,
+    val tracks: List<TrackResult>,
+)
+
 data class DiscoverData(
     val trendingSongs: List<ApiTrack>,
     val top: List<ApiTrack>,
@@ -65,6 +102,64 @@ object SpotiwoopApi {
         val route = if (kind == "album") "album" else "playlist"
         return tracks(get(route, "ref" to ref).optJSONArray("tracks")).map { it.track }
     }
+
+    /** Fiche artiste ; [ref] vaut "sp:<id>" ou "name:<nom>". */
+    suspend fun artist(ref: String): ArtistPage {
+        val o = get("artist", "ref" to ref)
+        val cities = o.optJSONArray("topCities")
+        val links = o.optJSONArray("links")
+        return ArtistPage(
+            ref = o.optString("ref"),
+            name = o.optString("name"),
+            image = o.optString("image").ifBlank { null },
+            banner = o.optString("banner").ifBlank { null },
+            followers = o.optLong("followers"),
+            monthlyListeners = o.optLong("monthlyListeners"),
+            bio = o.optString("bio").ifBlank { null },
+            topCities = (0 until (cities?.length() ?: 0)).map { i ->
+                cities!!.getJSONObject(i).let { TopCity(it.optString("city"), it.optString("country"), it.optLong("listeners")) }
+            },
+            topTracks = tracks(o.optJSONArray("topTracks")).map { it.track },
+            albums = cards(o.optJSONArray("albums")),
+            singles = cards(o.optJSONArray("singles")),
+            related = cards(o.optJSONArray("related")),
+            links = (0 until (links?.length() ?: 0)).map { i -> links!!.getJSONObject(i).let { it.optString("name") to it.optString("url") } },
+        )
+    }
+
+    /** Album ou playlist complet ; [ref] vaut "sp:<id>" ou "am:<…>". */
+    suspend fun collection(kind: String, ref: String): CollectionPage {
+        val o = get(if (kind == "album") "album" else "playlist", "ref" to ref)
+        return CollectionPage(
+            kind = kind,
+            ref = o.optString("ref").ifBlank { ref },
+            title = o.optString("title"),
+            subtitle = o.optString("subtitle").ifBlank { null },
+            subtitleRef = o.optString("subtitleRef").ifBlank { null },
+            image = o.optString("image").ifBlank { null },
+            description = o.optString("description").ifBlank { null },
+            date = o.optString("date").ifBlank { null },
+            label = o.optString("label").ifBlank { null },
+            copyright = o.optString("copyright").ifBlank { null },
+            plays = o.optLong("plays"),
+            followers = o.optLong("followers"),
+            totalTracks = o.optInt("totalTracks"),
+            tracks = tracks(o.optJSONArray("tracks")).map { it.track },
+        )
+    }
+
+    /** Référence d'un album connu seulement par son nom (menu ⋮ d'un titre) : premier album du même artiste. */
+    suspend fun findAlbumRef(album: String, artist: String): String? {
+        val albums = cards(get("search", "q" to "$album $artist".trim()).optJSONArray("albums"))
+        val main = artist.substringBefore(",").trim()
+        return (albums.firstOrNull { it.title.equals(album, true) && it.subtitle.orEmpty().contains(main, true) }
+            ?: albums.firstOrNull { it.title.equals(album, true) }
+            ?: albums.firstOrNull { it.subtitle.orEmpty().contains(main, true) })?.ref
+    }
+
+    /** Radio Spotify d'un artiste (bouton « Radio de l'artiste »). */
+    suspend fun artistRadio(name: String): List<TrackResult> =
+        tracks(get("radio", "seed" to "artist", "name" to name).optJSONArray("tracks")).map { it.track }
 
     /**
      * Suggestions par titre, comme le site : titres liés Audiomack (compte partagé), sinon radio
