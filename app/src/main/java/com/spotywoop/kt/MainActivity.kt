@@ -376,6 +376,9 @@ private fun App(
             SettingsScreen(onClose = { showSettings = false })
         }
 
+        // Bulle de mise à jour : par-dessus tous les écrans, tant que la dernière version n'est pas installée
+        com.spotywoop.kt.ui.UpdateBubble(Modifier.fillMaxSize().navigationBarsPadding())
+
         // Modal d'options Trois Points ⋮
         if (optionsTrack != null) {
             TrackOptionsSheet(

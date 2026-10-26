@@ -2,4 +2,5 @@
 <paths>
     <cache-path name="cached_apks" path="updates/" />
     <external-cache-path name="ext_cached_apks" path="updates/" />
+    <external-files-path name="ext_files_apks" path="updates/" />
 </paths>

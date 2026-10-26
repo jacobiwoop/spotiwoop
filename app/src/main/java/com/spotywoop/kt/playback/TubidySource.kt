@@ -26,7 +26,7 @@ import kotlin.math.abs
  */
 object TubidySource {
     private const val TAG = "TubidyLocal"
-    private const val BASE = "https://duesouth.co.za"
+    private const val DEFAULT_BASE = "https://duesouth.co.za"
     private const val USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36"
     private const val ANUBIS_PASS = "/.within.website/x/cmd/anubis/api/pass-challenge"
     private const val TOLERANCE_SEC = 5
@@ -54,7 +54,9 @@ object TubidySource {
         }
         @Synchronized override fun loadForRequest(url: HttpUrl): List<Cookie> =
             store.values.filter { it.matches(url) && it.expiresAt > System.currentTimeMillis() }
-        @Synchronized fun value(name: String): String? = store.values.firstOrNull { it.name == name }?.value
+        /** Valeur du cookie [name] envoyé à [url] (l'ancien miroir peut en avoir un du même nom). */
+        @Synchronized fun value(name: String, url: HttpUrl): String? =
+            store.values.firstOrNull { it.name == name && it.matches(url) }?.value
         @Synchronized fun valueMatching(name: (String) -> Boolean): String? = store.values.firstOrNull { name(it.name) }?.value
     }
 
@@ -65,6 +67,9 @@ object TubidySource {
         .build()
     private val noFollow = http.newBuilder().followRedirects(false).followSslRedirects(false).build()
     private val anubisLock = Any()
+
+    /** Hôte du miroir : le site déménage (duesouth.co.za → drakensbergexperience.co.za), on suit la redirection. */
+    @Volatile private var base = DEFAULT_BASE
 
     private data class Candidate(val title: String, val page: String, val durationSec: Int)
 
@@ -78,8 +83,13 @@ object TubidySource {
         val durationSec = durationMs?.takeIf { it > 0 }?.let { ((it + 500) / 1000).toInt() } ?: 0
         val featured = artists.orEmpty().split(",").map { it.trim() }.filter { it.isNotEmpty() }.drop(1)
 
-        val searchUrl = "$BASE/search?q=" + URLEncoder.encode(query, "UTF-8")
-        val results = parseSearch(page(searchUrl, null))
+        val (searchBody, searchUrl) = pageWithUrl("$base/search?q=" + URLEncoder.encode(query, "UTF-8"), null)
+        // Les appels POST de l'API ne suivent pas la redirection : on garde l'hôte final pour la suite.
+        searchUrl.toHttpUrl().let { "${it.scheme}://${it.host}" }.takeIf { it != base }?.let {
+            Log.i(TAG, "Miroir Tubidy : $base -> $it")
+            base = it
+        }
+        val results = parseSearch(searchBody)
         if (results.isEmpty()) {
             Log.i(TAG, "Aucun résultat pour '$query'")
             return null
@@ -147,11 +157,14 @@ object TubidySource {
     }
 
     /** GET HTML ; passe le défi Anubis s'il apparaît, puis rejoue la requête. */
-    private fun page(url: String, referer: String?): String {
+    private fun page(url: String, referer: String?): String = pageWithUrl(url, referer).first
+
+    /** Comme [page], avec l'adresse finale après redirections. */
+    private fun pageWithUrl(url: String, referer: String?): Pair<String, String> {
         repeat(3) {
             val authBefore = anubisAuth()
             val (body, finalUrl) = get(url, referer)
-            val challenge = ANUBIS_RE.find(body) ?: return body
+            val challenge = ANUBIS_RE.find(body) ?: return body to finalUrl
             passAnubis(unescape(challenge.groupValues[1]), finalUrl, authBefore)
         }
         throw IOException("Anubis redemande un défi après validation")
@@ -167,8 +180,11 @@ object TubidySource {
         }
     }
 
-    /** Cookie d'Anubis en cours (le nom contient « anubis »), pour savoir si un autre fil l'a déjà renouvelé. */
-    private fun anubisAuth(): String? = cookies.valueMatching { it.contains("anubis", ignoreCase = true) }
+    /**
+     * Cookie d'accès Anubis en cours (« …-anubis-auth-… »), pour savoir si un autre fil l'a déjà renouvelé.
+     * Pas le cookie « …-anubis-cookie-verification-… », posé par la page de défi elle-même.
+     */
+    private fun anubisAuth(): String? = cookies.valueMatching { it.contains("anubis-auth", ignoreCase = true) }
 
     private fun passAnubis(raw: String, pageUrl: String, authBefore: String?) = synchronized(anubisLock) {
         // Plusieurs résolutions tournent en même temps (titre en cours, pré-chargement) : si une autre a
@@ -181,7 +197,7 @@ object TubidySource {
         val challenge = json.getJSONObject("challenge")
         val started = System.currentTimeMillis()
         val (nonce, hash) = solveAnubis(challenge.optString("randomData"), difficulty)
-        val url = (BASE + ANUBIS_PASS).toHttpUrl().newBuilder()
+        val url = (pageUrl.toHttpUrl().resolve(ANUBIS_PASS) ?: (base + ANUBIS_PASS).toHttpUrl()).newBuilder()
             .addQueryParameter("id", challenge.optString("id"))
             .addQueryParameter("response", hash)
             .addQueryParameter("nonce", nonce.toString())
@@ -223,11 +239,11 @@ object TubidySource {
 
     private fun apiOnce(path: String, referer: String, payload: String): String {
         val body = JSONObject().put("payload", payload).toString().toRequestBody("application/json".toMediaType())
-        val req = Request.Builder().url(BASE + path).post(body).headers(referer)
+        val req = Request.Builder().url(base + path).post(body).headers(referer)
             .header("Accept", "application/json, text/plain, */*")
             .header("X-Requested-With", "XMLHttpRequest")
-            .header("Origin", BASE)
-            .apply { cookies.value("XSRF-TOKEN")?.let { header("X-XSRF-TOKEN", URLDecoder.decode(it, "UTF-8")) } }
+            .header("Origin", base)
+            .apply { cookies.value("XSRF-TOKEN", base.toHttpUrl())?.let { header("X-XSRF-TOKEN", URLDecoder.decode(it, "UTF-8")) } }
             .build()
         http.newCall(req).execute().use { resp ->
             val text = resp.body?.string().orEmpty()
@@ -308,7 +324,7 @@ object TubidySource {
         return n(1) * 3600 + n(2) * 60 + n(3)
     }
 
-    private fun absUrl(ref: String): String = if (ref.startsWith("http")) ref else BASE + ref
+    private fun absUrl(ref: String): String = if (ref.startsWith("http")) ref else base + ref
 
     @Suppress("DEPRECATION")
     private fun unescape(s: String): String = Html.fromHtml(s).toString()
