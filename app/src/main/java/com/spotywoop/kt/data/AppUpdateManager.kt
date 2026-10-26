@@ -1,16 +1,12 @@
 package com.spotywoop.kt.data
 
-import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
 import com.spotywoop.kt.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,7 +61,6 @@ object AppUpdateManager {
     private const val PREFS = "app_update"
     private const val KEY_DOWNLOAD_ID = "download_id"
     private const val KEY_DOWNLOAD_ASSET = "download_asset"
-    private var pollJob: Job? = null
 
     private val _promptDismissed = MutableStateFlow(false)
     val promptDismissed: StateFlow<Boolean> = _promptDismissed.asStateFlow()
@@ -122,10 +117,7 @@ object AppUpdateManager {
                         )
 
                         _latest.value = info
-                        // Téléchargement lancé avant (appli fermée entre-temps) : on reprend son suivi.
-                        appContext?.let { ctx ->
-                            if (resumeDownload(ctx, info)) return@launch
-                        }
+                        appContext?.let(::forgetSystemDownload)
 
                         // Vérifier si un APK existe déjà dans le cache
                         val ctx = appContext
@@ -141,7 +133,8 @@ object AppUpdateManager {
                                     return@launch
                                 } else {
                                     // APK obsolète ou incomplet (téléchargement interrompu) : nettoyer
-                                    val oldApks = updatesDir.listFiles { f -> f.extension.equals("apk", ignoreCase = true) || f.extension == "part" }
+                                    val keep = File(updatesDir, targetAsset.name + ".part") // reprise du téléchargement
+                                    val oldApks = updatesDir.listFiles { f -> f != keep && (f.extension.equals("apk", ignoreCase = true) || f.extension == "part") }
                                     if (!oldApks.isNullOrEmpty()) {
                                         android.util.Log.i("AppUpdateManager", "Suppression de ${oldApks.size} ancien(s) APK obsolète(s)")
                                         oldApks.forEach { it.delete() }
@@ -169,108 +162,100 @@ object AppUpdateManager {
     }
 
     /**
-     * Télécharge l'APK par le gestionnaire de téléchargements d'Android : il continue appli fermée,
-     * avec une notification de progression (un appui sur la notification finale lance l'installation).
-     * Avant, le téléchargement tournait dans l'appli et s'arrêtait dès qu'on la quittait.
+     * Lance le téléchargement de l'APK dans [UpdateDownloadService], un service au premier plan avec sa
+     * notification de progression : il continue quand on quitte l'appli. On n'utilise plus le
+     * gestionnaire de téléchargements d'Android, que certains téléphones (Xiaomi) laissent en attente
+     * sans jamais démarrer.
      */
     fun downloadAndInstall(context: Context, info: UpdateInfo) {
         if (_status.value is UpdateStatus.Downloading) return
         val ctx = context.applicationContext
         _latest.value = info
+        _status.value = UpdateStatus.Downloading(0f, 0L, info.assetSize, info)
         try {
-            val updatesDir = getUpdatesDir(ctx)
-            updatesDir.listFiles { f -> f.extension.equals("apk", ignoreCase = true) || f.extension == "part" }?.forEach { it.delete() }
-            val dm = ctx.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            prefs(ctx).getLong(KEY_DOWNLOAD_ID, -1L).takeIf { it >= 0 }?.let { dm.remove(it) }
-
-            val request = DownloadManager.Request(Uri.parse(info.downloadUrl))
-                .setTitle("Spotywoop ${info.tagName}")
-                .setDescription("Mise à jour de l'application")
-                .setMimeType("application/vnd.android.package-archive")
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                .setDestinationInExternalFilesDir(ctx, null, "updates/${info.assetName}")
-                .addRequestHeader("User-Agent", "Spotywoop/${BuildConfig.VERSION_NAME}")
-            val id = dm.enqueue(request)
-            prefs(ctx).edit().putLong(KEY_DOWNLOAD_ID, id).putString(KEY_DOWNLOAD_ASSET, info.assetName).apply()
-            _status.value = UpdateStatus.Downloading(0f, 0L, info.assetSize, info)
-            poll(ctx, id, info)
+            UpdateDownloadService.start(ctx, info)
         } catch (e: Exception) {
-            android.util.Log.e("AppUpdateManager", "Erreur téléchargement APK: ${e.message}")
+            android.util.Log.e("AppUpdateManager", "Service de téléchargement non lancé: ${e.message}")
             _status.value = UpdateStatus.Error("Erreur téléchargement: ${e.message}")
         }
     }
 
-    /** Reprend le suivi d'un téléchargement de [info] lancé plus tôt ; faux s'il n'y en a pas. */
-    private fun resumeDownload(ctx: Context, info: UpdateInfo): Boolean {
-        val p = prefs(ctx)
-        val id = p.getLong(KEY_DOWNLOAD_ID, -1L)
-        if (id < 0 || p.getString(KEY_DOWNLOAD_ASSET, null) != info.assetName) return false
-        val (state, _, _) = query(ctx, id) ?: return false
-        if (state == DownloadManager.STATUS_FAILED) return false
-        if (state == DownloadManager.STATUS_SUCCESSFUL) {
-            val apk = File(getUpdatesDir(ctx), info.assetName)
-            if (!isValidApk(ctx, apk, info.assetSize)) return false
-            _status.value = UpdateStatus.ReadyToInstall(apk, info, isLatest = true)
-            return true
-        }
-        _status.value = UpdateStatus.Downloading(0f, 0L, info.assetSize, info)
-        poll(ctx, id, info)
-        return true
-    }
-
-    /** Suit le téléchargement tant que l'appli tourne ; le gestionnaire d'Android continue sans elle. */
-    private fun poll(ctx: Context, id: Long, info: UpdateInfo) {
-        pollJob?.cancel()
-        pollJob = scope.launch {
-            while (true) {
-                val (state, done, total) = query(ctx, id) ?: run {
-                    // Téléchargement annulé depuis la notification
-                    _status.value = UpdateStatus.Available(info)
-                    return@launch
-                }
-                when (state) {
-                    DownloadManager.STATUS_SUCCESSFUL -> {
-                        val apk = File(getUpdatesDir(ctx), info.assetName)
-                        _status.value = if (isValidApk(ctx, apk, info.assetSize)) {
-                            UpdateStatus.ReadyToInstall(apk, info, isLatest = true)
-                        } else {
-                            apk.delete()
-                            UpdateStatus.Error("APK corrompu, réessayez")
+    /**
+     * Télécharge [info] dans le dossier des mises à jour, en reprenant un fichier .part interrompu,
+     * et met à jour [status]. Appelé par [UpdateDownloadService] ; rend l'APK vérifié.
+     */
+    internal suspend fun download(ctx: Context, info: UpdateInfo, onProgress: (Float) -> Unit): File = withContext(Dispatchers.IO) {
+        val dir = getUpdatesDir(ctx)
+        val apk = File(dir, info.assetName)
+        val part = File(dir, info.assetName + ".part")
+        dir.listFiles { f -> f != part && (f.extension.equals("apk", ignoreCase = true) || f.extension == "part") }?.forEach { it.delete() }
+        var attempt = 0
+        while (true) {
+            try {
+                val from = part.length()
+                val req = Request.Builder().url(info.downloadUrl)
+                    .header("User-Agent", "Spotywoop/${BuildConfig.VERSION_NAME}")
+                    .apply { if (from > 0) header("Range", "bytes=$from-") }
+                    .build()
+                http.newCall(req).execute().use { resp ->
+                    if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
+                    val body = resp.body ?: throw IOException("Réponse vide")
+                    val append = from > 0 && resp.code == 206
+                    var done = if (append) from else 0L
+                    val total = if (info.assetSize > 0) info.assetSize else done + body.contentLength()
+                    java.io.FileOutputStream(part, append).use { out ->
+                        val buf = ByteArray(64 * 1024)
+                        val input = body.byteStream()
+                        var lastEmit = 0L
+                        while (true) {
+                            val n = input.read(buf)
+                            if (n < 0) break
+                            out.write(buf, 0, n)
+                            done += n
+                            val now = System.currentTimeMillis()
+                            if (now - lastEmit > 300) {
+                                lastEmit = now
+                                val progress = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f
+                                _status.value = UpdateStatus.Downloading(progress, done, total, info)
+                                onProgress(progress)
+                            }
                         }
-                        return@launch
-                    }
-                    DownloadManager.STATUS_FAILED -> {
-                        _status.value = UpdateStatus.Error("Échec du téléchargement, réessayez")
-                        return@launch
-                    }
-                    else -> {
-                        val totalBytes = if (total > 0) total else info.assetSize
-                        val progress = if (totalBytes > 0) (done.toFloat() / totalBytes).coerceIn(0f, 1f) else 0f
-                        _status.value = UpdateStatus.Downloading(progress, done, totalBytes, info)
                     }
                 }
-                delay(400)
+                break
+            } catch (e: IOException) {
+                // Coupure réseau : on reprend là où on s'était arrêté (quelques essais).
+                if (++attempt >= 5) {
+                    _status.value = UpdateStatus.Error("Échec du téléchargement, réessayez")
+                    throw e
+                }
+                kotlinx.coroutines.delay(2_000L * attempt)
             }
         }
+        apk.delete()
+        if (!part.renameTo(apk) || !isValidApk(ctx, apk, info.assetSize)) {
+            apk.delete()
+            part.delete()
+            _status.value = UpdateStatus.Error("APK corrompu, réessayez")
+            throw IOException("APK corrompu")
+        }
+        _status.value = UpdateStatus.ReadyToInstall(apk, info, isLatest = true)
+        apk
     }
 
-    /** (statut, octets reçus, taille totale) du téléchargement, ou null s'il n'existe plus. */
-    private fun query(ctx: Context, id: Long): Triple<Int, Long, Long>? {
-        val dm = ctx.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        dm.query(DownloadManager.Query().setFilterById(id)).use { c ->
-            if (c == null || !c.moveToFirst()) return null
-            return Triple(
-                c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)),
-                c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)),
-                c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)),
-            )
-        }
+    /** Ancienne version : retire de la file d'Android le téléchargement qu'elle y avait mis. */
+    private fun forgetSystemDownload(ctx: Context) {
+        val p = prefs(ctx)
+        val id = p.getLong(KEY_DOWNLOAD_ID, -1L)
+        if (id < 0) return
+        runCatching { (ctx.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager).remove(id) }
+        p.edit().remove(KEY_DOWNLOAD_ID).remove(KEY_DOWNLOAD_ASSET).apply()
     }
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     private fun getUpdatesDir(context: Context): File {
-        // Dossier propre à l'appli où le gestionnaire de téléchargements écrit (aucune permission requise).
+        // Dossier propre à l'appli (aucune permission requise), partagé avec l'installateur par le FileProvider.
         val base = context.getExternalFilesDir(null) ?: context.filesDir
         return File(base, "updates").also { it.mkdirs() }
     }

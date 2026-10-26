@@ -1,5 +1,8 @@
 package com.spotywoop.kt.ui
 
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -36,6 +39,8 @@ fun SettingsScreen(
         modifier
             .background(SpotyColors.Background)
             .fillMaxSize()
+            // L'écran recouvre l'accueil : il absorbe les appuis pour qu'ils ne lancent pas un titre derrière.
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
             .statusBarsPadding()
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
