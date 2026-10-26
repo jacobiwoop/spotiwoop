@@ -152,13 +152,13 @@ object YouTubeRadioClient {
                     else -> 0L
                 }
 
-                val cleanTitle = title.replace(Regex("""\s*[\(\[].*?(Official|Video|Clip|Audio|Lyric|HQ).*?[\)\]]""", RegexOption.IGNORE_CASE), "").trim()
+                val (cleanArtist, cleanTitle) = splitVideoTitle(title, artist)
 
                 results.add(
                     TrackResult(
                         id = "yt:$vid",
-                        name = cleanTitle.ifBlank { title },
-                        artists = artist,
+                        name = cleanTitle,
+                        artists = cleanArtist,
                         album = "Radio YouTube",
                         durationMs = durMs,
                         cover = "https://i.ytimg.com/vi/$vid/hqdefault.jpg",
@@ -168,5 +168,24 @@ object YouTubeRadioClient {
             }
             results
         }
+    }
+
+    private val NOISE_RE = Regex("""\s*[\(\[][^\)\]]*(Official|Video|Visuali[sz]er|Clip|Audio|Lyric|Paroles|HQ|HD|4K)[^\)\]]*[\)\]]""", RegexOption.IGNORE_CASE)
+    private val CHANNEL_SUFFIX_RE = Regex("""(\s*-\s*Topic|VEVO|\s+Official|TV)$""", RegexOption.IGNORE_CASE)
+
+    /**
+     * « Burna Boy - On The Low [Official Music Video] » publié par « BurnaBoyVEVO » →
+     * artiste « Burna Boy », titre « On The Low ». Sans « - », la chaîne sert d'artiste.
+     */
+    internal fun splitVideoTitle(videoTitle: String, channel: String): Pair<String, String> {
+        val cleaned = NOISE_RE.replace(videoTitle, "").replace(Regex("""\s+"""), " ").trim()
+        val dash = Regex("""\s[-–—]\s""").find(cleaned)
+        if (dash != null) {
+            val left = cleaned.substring(0, dash.range.first).trim()
+            val right = cleaned.substring(dash.range.last + 1).trim()
+            if (left.isNotEmpty() && right.isNotEmpty()) return left to right
+        }
+        val artist = CHANNEL_SUFFIX_RE.replace(channel.trim(), "").trim().ifBlank { channel }
+        return artist to cleaned.ifBlank { videoTitle }
     }
 }

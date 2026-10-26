@@ -161,10 +161,7 @@ object SpotiwoopApi {
     suspend fun artistRadio(name: String): List<TrackResult> =
         tracks(get("radio", "seed" to "artist", "name" to name).optJSONArray("tracks")).map { it.track }
 
-    /**
-     * Suggestions par titre, comme le site : titres liés Audiomack (compte partagé), sinon radio
-     * Spotify de l'artiste principal. Rend une liste vide si l'API n'a rien.
-     */
+    /** Titres liés d'Audiomack (compte partagé), dernier recours des suggestions. Vide si l'API n'a rien. */
     suspend fun radio(seedId: String, artists: String, title: String, durationMs: Long): List<TrackResult> {
         val o = try {
             get(
@@ -174,6 +171,8 @@ object SpotiwoopApi {
                 "q" to "$artists $title".trim(),
                 "duration" to if (durationMs > 0) "${(durationMs + 500) / 1000}" else "",
                 "artist" to artists,
+                // YouTube et la radio Spotify sont déjà demandés par l'appli avant : seulement Audiomack ici.
+                "sources" to "audiomack",
             )
         } catch (e: NotFound) {
             return emptyList()

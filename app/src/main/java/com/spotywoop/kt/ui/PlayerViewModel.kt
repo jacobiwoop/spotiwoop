@@ -293,7 +293,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     /**
      * Lance la radio explicite basée sur le morceau en cours d'écoute :
-     * Radio du titre : le titre en cours puis ses suggestions (Audiomack d'abord, YouTube Mix en secours).
+     * Radio du titre : le titre en cours puis ses suggestions (YouTube Mix d'abord, voir suggestions()).
      */
     fun startRadioForCurrentTrack() {
         if (!OfflineSkipper.isOnline(getApplication())) {
@@ -409,7 +409,9 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         // Mode infini automatique (Radio Auto Glissante) :
         // Dès qu'on arrive à l'avant-dernier morceau (currentMediaItemIndex >= mediaItemCount - 2),
         // on charge 5 nouveaux morceaux en se basant sur le DERNIER morceau actuel !
-        if (current != null && !isPrefetchingAutoplay) {
+        // Pas pendant le premier chargement des suggestions : la file n'a alors qu'un titre et paraît
+        // finie, ce qui ajoutait une deuxième fois les mêmes suggestions.
+        if (current != null && !isPrefetchingAutoplay && !_state.value.loadingRadio) {
             val isNearEnd = c.mediaItemCount >= 2 && c.currentMediaItemIndex >= c.mediaItemCount - 2
             val isAtEnd = !c.hasNextMediaItem()
             if (_state.value.isAutoRadio && (isNearEnd || isAtEnd)) {
@@ -439,24 +441,34 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
      * Radio Auto Glissante : recharge 5 morceaux basés sur le DERNIER morceau de la file.
      */
     /**
-     * Suggestions pour un titre : Audiomack d'abord (titres liés via l'API du site, qui se rabat
-     * elle-même sur la radio Spotify de l'artiste), puis YouTube Mix si l'API n'a rien ou ne répond pas.
-     * Le titre de départ n'est jamais rendu.
+     * Suggestions d'un titre, au choix de l'utilisateur : YouTube Mix d'abord (vrais titres, variés),
+     * puis la radio Spotify de l'artiste, puis les titres liés d'Audiomack. Le titre de départ est retiré.
      */
     private suspend fun suggestions(seedId: String, artists: String, title: String, durationMs: Long, limit: Int): List<TrackResult> {
-        val viaApi = runCatching {
-            kotlinx.coroutines.withTimeout(10_000) { com.spotywoop.kt.data.SpotiwoopApi.radio(seedId, artists, title, durationMs) }
-        }.onFailure { android.util.Log.w("PlayerViewModel", "Suggestions Audiomack indisponibles : ${it.message}") }
-            .getOrDefault(emptyList())
-            .filter { it.id != seedId }
-        if (viaApi.isNotEmpty()) {
-            android.util.Log.i("PlayerViewModel", "Suggestions : ${viaApi.size} titres via l'API (Audiomack/Spotify) pour '$artists - $title'")
-            return viaApi.take(limit)
+        val seed = cleanSongTitle(title)
+        fun List<TrackResult>.withoutSeed() = filter { it.id != seedId && cleanSongTitle(it.name) != seed }
+        val sources = listOf<Pair<String, suspend () -> List<TrackResult>>>(
+            "YouTube Mix" to { YouTubeRadioClient.fetchRadioTracks("$artists $title", limit = limit + 1) },
+            "radio Spotify" to {
+                kotlinx.coroutines.withTimeout(10_000) {
+                    com.spotywoop.kt.data.SpotiwoopApi.artistRadio(artists.substringBefore(",").trim())
+                }
+            },
+            "Audiomack" to {
+                kotlinx.coroutines.withTimeout(10_000) { com.spotywoop.kt.data.SpotiwoopApi.radio(seedId, artists, title, durationMs) }
+            },
+        )
+        for ((name, fetch) in sources) {
+            val found = runCatching { fetch() }
+                .onFailure { android.util.Log.w("PlayerViewModel", "Suggestions $name indisponibles : ${it.message}") }
+                .getOrDefault(emptyList())
+                .withoutSeed()
+            if (found.isNotEmpty()) {
+                android.util.Log.i("PlayerViewModel", "Suggestions : ${found.size} titres via $name pour '$artists - $title'")
+                return found.take(limit)
+            }
         }
-        // YouTube Mix place le titre de départ en tête : on le retire.
-        val mix = YouTubeRadioClient.fetchRadioTracks("$artists $title", limit = limit + 1).drop(1)
-        android.util.Log.i("PlayerViewModel", "Suggestions : ${mix.size} titres via YouTube Mix (secours) pour '$artists - $title'")
-        return mix
+        return emptyList()
     }
 
     private fun NowPlaying.toTrackResult() = TrackResult(

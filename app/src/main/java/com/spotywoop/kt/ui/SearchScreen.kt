@@ -138,7 +138,7 @@ fun SearchScreen(
                     tab = state.tab,
                     currentTrackId = currentTrackId,
                     onTab = vm::onTabSelected,
-                    onPlayTracks = onPlayTracks,
+                    onPlayTrack = onPlayTrack,
                     onTrackOptions = onTrackOptions,
                     onOpenAlbum = onOpenAlbum,
                     onOpenArtist = onOpenArtist,
@@ -155,7 +155,8 @@ private fun LazyListScope.results(
     tab: SearchTab,
     currentTrackId: String?,
     onTab: (SearchTab) -> Unit,
-    onPlayTracks: (List<TrackResult>, Int) -> Unit,
+    // Un titre trouvé se lance seul, suivi des suggestions : pas des autres résultats de la recherche.
+    onPlayTrack: (TrackResult) -> Unit,
     onTrackOptions: (TrackResult) -> Unit,
     onOpenAlbum: (CollectionNav) -> Unit,
     onOpenArtist: (ArtistNav) -> Unit,
@@ -172,7 +173,7 @@ private fun LazyListScope.results(
                 track = t,
                 number = if (numbered) "${i + 1}" else null,
                 current = t.id == currentTrackId,
-                onClick = { onPlayTracks(list, i) },
+                onClick = { onPlayTrack(t) },
                 onOptions = { onTrackOptions(t) },
             )
         }
@@ -214,7 +215,7 @@ private fun LazyListScope.results(
                     header("h-best", "Meilleur résultat")
                     item(key = "best") {
                         BestResult(bestTrack.name, bestTrack.cover, "TITRE", subtitle = bestTrack.artists, explicit = bestTrack.isExplicit) {
-                            onPlayTracks(results.tracks, 0)
+                            onPlayTrack(bestTrack)
                         }
                     }
                 }

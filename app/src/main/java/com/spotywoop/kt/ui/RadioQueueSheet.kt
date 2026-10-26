@@ -171,7 +171,7 @@ fun RadioQueueSheet(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Génère 25 titres recommandés via Audiomack",
+                        text = "Génère 25 titres recommandés via YouTube",
                         color = SpotyColors.TextSecondary,
                         fontSize = 11.sp,
                     )
