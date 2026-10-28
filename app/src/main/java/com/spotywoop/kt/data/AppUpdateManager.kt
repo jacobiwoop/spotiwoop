@@ -44,7 +44,7 @@ object AppUpdateManager {
     private const val GITHUB_RELEASES_URL = "https://api.github.com/repos/jacobiwoop/spotiwoop/releases/latest"
 
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val http = OkHttpClient.Builder()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http)
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .build()

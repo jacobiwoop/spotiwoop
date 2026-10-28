@@ -26,7 +26,7 @@ class SpotifyException(message: String) : IOException(message)
  * page d'accueil (clientVersion + cookie sp_t) → token TOTP → client token → GraphQL pathfinder.
  */
 class SpotifyClient(
-    private val http: OkHttpClient = OkHttpClient.Builder()
+    private val http: OkHttpClient = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http)
         .callTimeout(30, TimeUnit.SECONDS)
         .build(),
 ) {

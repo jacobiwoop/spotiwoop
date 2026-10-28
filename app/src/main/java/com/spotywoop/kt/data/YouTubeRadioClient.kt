@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
  */
 object YouTubeRadioClient {
 
-    private val http = OkHttpClient.Builder()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http)
         .callTimeout(10, TimeUnit.SECONDS)
         .build()
 

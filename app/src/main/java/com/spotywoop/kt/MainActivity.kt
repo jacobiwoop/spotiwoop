@@ -124,6 +124,19 @@ private fun App(
     fun openPage(page: Any) { if (pages.lastOrNull() != page) pages.add(page) }
     var optionsTrack by remember { mutableStateOf<TrackResult?>(null) }
 
+    // Écran affiché, noté dans le journal à chaque changement.
+    val screen = when {
+        showSettings -> "Paramètres"
+        optionsTrack != null -> "Options de ${optionsTrack?.artists} - ${optionsTrack?.name}"
+        showPlayer -> "Lecteur"
+        else -> when (val p = pages.lastOrNull()) {
+            is ArtistNav -> "Artiste ${p.name} [${p.ref}]"
+            is CollectionNav -> "${p.kind} ${p.title} [${p.ref}]"
+            else -> "Onglet ${currentTab.label}"
+        }
+    }
+    LaunchedEffect(screen) { android.util.Log.i("Navigation", "Écran : $screen") }
+
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= 33) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)

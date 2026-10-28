@@ -29,6 +29,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -99,6 +101,8 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     private var lastErrorRetryTrackId: String? = null
 
+    private fun logAction(msg: String) = android.util.Log.i("PlayerViewModel", "Action : $msg")
+
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) = refresh()
 
@@ -148,6 +152,12 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             StreamResolver.resolved.collect { refresh() }
         }
+        // Chaque message d'erreur montré à l'écran est aussi noté dans le journal.
+        viewModelScope.launch {
+            state.map { it.error }.distinctUntilChanged().collect { msg ->
+                if (msg != null) android.util.Log.w("PlayerViewModel", "Erreur affichée : $msg")
+            }
+        }
         viewModelScope.launch {
             OfflineSkipper.notice.collect { msg ->
                 if (msg != null) {
@@ -165,6 +175,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun playQueue(tracks: List<TrackResult>, startIndex: Int) {
+        logAction("Lecture d'une liste de ${tracks.size} titres à partir de #$startIndex : ${tracks.getOrNull(startIndex)?.let { "${it.artists} - ${it.name} [${it.id}]" }}")
         val selectedTrack = tracks.getOrNull(startIndex) ?: return
         if (!OfflineSkipper.isOnline(getApplication()) && !com.spotywoop.kt.data.DownloadManager.isDownloaded(selectedTrack.id)) {
             _state.update { it.copy(error = "Ce titre n'est pas disponible hors connexion") }
@@ -194,6 +205,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
      * 3. Recharge automatiquement 5 morceaux quand on arrive à l'avant-dernier, basés sur le dernier
      */
     fun playTrackWithAutoRadio(track: TrackResult) {
+        logAction("Lecture avec radio auto : ${track.artists} - ${track.name} [${track.id}]")
         if (!OfflineSkipper.isOnline(getApplication()) && !com.spotywoop.kt.data.DownloadManager.isDownloaded(track.id)) {
             _state.update { it.copy(error = "Ce titre n'est pas disponible hors connexion") }
             return
@@ -241,18 +253,21 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                     _state.update { it.copy(loadingRadio = false) }
                 }
             } catch (e: Exception) {
+                android.util.Log.w("PlayerViewModel", "Échec des suggestions de la radio auto : $e")
                 _state.update { it.copy(loadingRadio = false) }
             }
         }
     }
 
     fun togglePlay() = withController {
+        logAction(if (isPlaying) "Pause" else "Lecture (état $playbackState)")
         if (playbackState == Player.STATE_ENDED) seekTo(0)
         if (playbackState == Player.STATE_IDLE) prepare()
         if (isPlaying) pause() else play()
     }
 
     fun next() = withController {
+        logAction("Suivant (titre ${currentMediaItemIndex + 1}/$mediaItemCount)")
         if (hasNextMediaItem()) {
             seekToNextMediaItem()
         } else if (_state.value.isRadioActive) {
@@ -268,12 +283,17 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun previous() = withController {
+        logAction("Précédent (position ${currentPosition / 1000} s)")
         if (currentPosition > 3_000 || !hasPreviousMediaItem()) seekTo(0) else seekToPreviousMediaItem()
     }
 
-    fun seekTo(positionMs: Long) = withController { seekTo(positionMs) }
+    fun seekTo(positionMs: Long) = withController {
+        logAction("Déplacement à ${positionMs / 1000} s")
+        seekTo(positionMs)
+    }
 
     fun playTrackFromQueue(track: TrackResult) {
+        logAction("Lecture depuis la file : ${track.artists} - ${track.name} [${track.id}]")
         if (!OfflineSkipper.isOnline(getApplication()) && !com.spotywoop.kt.data.DownloadManager.isDownloaded(track.id)) {
             _state.update { it.copy(error = "Ce titre n'est pas disponible hors connexion") }
             return
@@ -296,6 +316,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
      * Radio du titre : le titre en cours puis ses suggestions (YouTube Mix d'abord, voir suggestions()).
      */
     fun startRadioForCurrentTrack() {
+        logAction("Radio du titre en cours demandée")
         if (!OfflineSkipper.isOnline(getApplication())) {
             _state.update { it.copy(error = "Radio indisponible hors connexion") }
             return
@@ -341,6 +362,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setPlaybackMode(mode: PlaybackMode) {
+        logAction("Mode de lecture : $mode")
         _state.update { it.copy(playbackMode = mode) }
         withController {
             when (mode) {

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,9 +27,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.spotywoop.kt.BuildConfig
+import com.spotywoop.kt.data.AppLog
 import com.spotywoop.kt.data.AppUpdateManager
 import com.spotywoop.kt.data.UpdateStatus
 import com.spotywoop.kt.ui.theme.SpotyColors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SettingsScreen(
@@ -63,6 +68,8 @@ fun SettingsScreen(
 
         // --- SECTION MISE À JOUR (IN-APP UPDATER) ---
         UpdateCard()
+
+        LogCard()
 
         Spacer(Modifier.weight(1f))
 
@@ -250,6 +257,61 @@ private fun UpdateCard() {
                 )
             }
             else -> {}
+        }
+    }
+}
+
+/** Journal de l'appli : à partager quand quelque chose ne marche pas, pour retrouver ce qui s'est passé. */
+@Composable
+private fun LogCard() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var size by androidx.compose.runtime.remember { androidx.compose.runtime.mutableLongStateOf(AppLog.totalBytes()) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SpotyColors.Surface, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text("Journal de l'appli", color = SpotyColors.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            "Tout ce que fait l'appli est noté (${AppLog.files().size} fichiers, ${if (size < 1_048_576) "${size / 1024} Ko" else "%.1f Mo".format(size / 1_048_576.0)}). " +
+                "Partage-le quand quelque chose ne marche pas.",
+            color = SpotyColors.TextSecondary,
+            fontSize = 12.sp,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(
+                onClick = {
+                    scope.launch {
+                        val zip = withContext(Dispatchers.IO) { AppLog.zip(context) }
+                        val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", zip)
+                        val send = android.content.Intent(android.content.Intent.ACTION_SEND)
+                            .setType("application/zip")
+                            .putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                            .putExtra(android.content.Intent.EXTRA_SUBJECT, "Journal Spotywoop v${BuildConfig.VERSION_NAME}")
+                            .addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        context.startActivity(android.content.Intent.createChooser(send, "Partager le journal"))
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = SpotyColors.SpotifyGreen),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text("Partager", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        withContext(Dispatchers.IO) { AppLog.clear() }
+                        size = AppLog.totalBytes()
+                    }
+                },
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text("Effacer", color = SpotyColors.TextPrimary)
+            }
         }
     }
 }

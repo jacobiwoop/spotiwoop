@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 object OnlineResolveSource {
     private const val TAG = "OnlineResolve"
 
-    private val http = OkHttpClient.Builder()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http)
         .connectTimeout(5, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS) // le serveur abandonne lui-même après 15 s
         .build()

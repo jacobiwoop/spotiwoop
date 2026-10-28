@@ -21,7 +21,7 @@ object SpotDlMatcher {
     private const val TAG = "SpotDlMatcher"
     private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
 
-    private val http = OkHttpClient.Builder()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http)
         .callTimeout(10, TimeUnit.SECONDS)
         .build()
 

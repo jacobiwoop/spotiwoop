@@ -69,7 +69,7 @@ object StreamResolver {
     private const val TTL_MS = 15 * 60_000L
     private const val RACE_TIMEOUT_MS = 25_000L
 
-    private val http = OkHttpClient.Builder().callTimeout(20, TimeUnit.SECONDS).build()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http).callTimeout(20, TimeUnit.SECONDS).build()
     private val cache = ConcurrentHashMap<String, ResolvedStream>()
 
     private val _resolved = MutableStateFlow<Map<String, ResolvedStream>>(emptyMap())

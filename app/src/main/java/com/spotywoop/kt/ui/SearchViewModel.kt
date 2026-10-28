@@ -89,16 +89,19 @@ class SearchViewModel(private val spotify: SpotifyClient = SpotifyClient()) : Vi
     fun search() {
         val query = _state.value.query.trim()
         if (query.isEmpty()) return
+        android.util.Log.i("Search", "Recherche : « $query »")
         _state.update { it.copy(showSuggestions = false, suggestions = emptyList(), tab = SearchTab.All) }
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
             try {
                 val results = spotify.search(query)
+                android.util.Log.i("Search", "Résultats pour « $query » : ${results.tracks.size} titres")
                 _state.update { it.copy(loading = false, results = results, searchedQuery = query) }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
+                android.util.Log.w("Search", "Recherche « $query » échouée", e)
                 _state.update { it.copy(loading = false, error = e.message ?: e.javaClass.simpleName) }
             }
         }

@@ -60,7 +60,7 @@ object TubidySource {
         @Synchronized fun valueMatching(name: (String) -> Boolean): String? = store.values.firstOrNull { name(it.name) }?.value
     }
 
-    private val http = OkHttpClient.Builder()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http)
         .cookieJar(cookies)
         .connectTimeout(8, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)

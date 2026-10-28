@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
  * GET https://song.link/s/<spotifyId> → parse __NEXT_DATA__ JSON → ID Tidal numérique.
  */
 object SonglinkClient {
-    private val http = OkHttpClient.Builder().callTimeout(20, TimeUnit.SECONDS).build()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http).callTimeout(20, TimeUnit.SECONDS).build()
 
     private val NEXT_DATA_RE = Regex(
         """<script id="__NEXT_DATA__" type="application/json">(.*?)</script>""",

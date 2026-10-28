@@ -24,7 +24,7 @@ data class LyricsResult(
  */
 object LyricsClient {
 
-    private val http = OkHttpClient.Builder().callTimeout(10, TimeUnit.SECONDS).build()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http).callTimeout(10, TimeUnit.SECONDS).build()
     private val cache = ConcurrentHashMap<String, LyricsResult?>()
 
     private val LRC_REGEX = Regex("""\[(\d+):(\d+(?:\.\d+)?)\](.*)""")

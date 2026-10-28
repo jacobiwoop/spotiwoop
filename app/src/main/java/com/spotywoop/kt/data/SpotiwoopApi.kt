@@ -80,7 +80,7 @@ data class DiscoverData(
  * "am:<id>", que le résolveur lit directement.
  */
 object SpotiwoopApi {
-    private val http = OkHttpClient.Builder()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http)
         .connectTimeout(8, TimeUnit.SECONDS)
         .readTimeout(25, TimeUnit.SECONDS)
         .build()

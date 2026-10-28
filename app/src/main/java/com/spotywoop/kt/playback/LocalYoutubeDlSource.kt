@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit
 class LocalYoutubeDlSource(private val context: Context) : StreamSource {
     override val name = "Moteur Natif (yt-dlp)"
 
-    private val httpClient = OkHttpClient.Builder()
+    private val httpClient = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http)
         .callTimeout(4, TimeUnit.SECONDS)
         .build()
 

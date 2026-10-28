@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
  */
 class SpotifyMetadataClient(private val spotifyClient: SpotifyClient = SpotifyClient()) {
 
-    private val http = OkHttpClient.Builder().callTimeout(20, TimeUnit.SECONDS).build()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http).callTimeout(20, TimeUnit.SECONDS).build()
 
     fun trackIsrc(spotifyTrackId: String): String {
         val gid = base62ToGid(spotifyTrackId.trim())

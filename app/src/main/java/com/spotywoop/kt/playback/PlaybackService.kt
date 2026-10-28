@@ -76,6 +76,17 @@ class PlaybackService : MediaSessionService() {
                 android.util.Log.d("PlaybackService", "ExoPlayer onPlayWhenReadyChanged: playWhenReady=$playWhenReady, reason=$reason")
             }
 
+            override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+                val why = when (reason) {
+                    Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> "fin du titre"
+                    Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> "choisi"
+                    Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> "répétition"
+                    else -> "nouvelle file"
+                }
+                val m = mediaItem?.mediaMetadata
+                android.util.Log.i("PlaybackService", "Titre suivant ($why) : ${m?.artist} - ${m?.title} [${mediaItem?.mediaId}], file de ${player.mediaItemCount}")
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 android.util.Log.e("PlaybackService", "ExoPlayer onPlayerError: ${error.errorCodeName} - ${error.message}", error)
             }

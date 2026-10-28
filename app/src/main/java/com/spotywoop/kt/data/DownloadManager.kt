@@ -30,7 +30,7 @@ data class ActiveDownload(
 object DownloadManager {
 
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val http = OkHttpClient.Builder()
+    private val http = OkHttpClient.Builder().addInterceptor(com.spotywoop.kt.data.AppLog.Http)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(120, TimeUnit.SECONDS)
         .callTimeout(0, TimeUnit.MILLISECONDS)
