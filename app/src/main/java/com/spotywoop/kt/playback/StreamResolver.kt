@@ -60,8 +60,9 @@ class SpotifyPreviewSource(private val http: OkHttpClient) : StreamSource {
 /**
  * Résout les URLs audio :
  *   0. fichier téléchargé (hors-ligne) ;
- *   1. course entre online-resolve (Audiomack + Tubidy, côté serveur) et yt-dlp sur le téléphone :
- *      le premier lien obtenu gagne ;
+ *   1. course entre les sources du téléphone (Audiomack, NetEase, Kuwo, QQ, yt-dlp) : le premier lien obtenu gagne ;
+ *      Waptrick et le serveur online-resolve tournent en même temps, mais ne servent que si elles échouent toutes :
+ *      le téléphone reste autonome, et ne consomme pas les quotas du relais pour rien ;
  *   2. aperçu Spotify de 30 s en dernier recours.
  */
 object StreamResolver {
@@ -110,14 +111,19 @@ object StreamResolver {
         val knownYtId = TrackIdCache.get(spotifyTrackId)?.youtubeId ?: ytVideoId
 
         // 1. Course : le premier lien obtenu gagne, les autres couloirs sont abandonnés.
-        val lanes = buildList<Pair<String, () -> ResolvedStream?>> {
-            if (textQuery.isNotBlank()) add("online-resolve" to { OnlineResolveSource.resolve(artist, title, durationMs, spotifyTrackId) })
-            // Tubidy depuis le téléphone : concourt avec le serveur (utile si Vercel est lent ou en panne).
-            if (textQuery.isNotBlank()) add("tubidy-local" to { TubidySource.resolve(artist, title, durationMs) })
+        val lanes = buildList {
+            if (textQuery.isNotBlank() || spotifyTrackId.startsWith("am:")) add(Lane("audiomack") { AudiomackSource.resolve(artist, title, durationMs, spotifyTrackId) })
+            if (textQuery.isNotBlank()) {
+                add(Lane("netease") { NetEaseSource.resolve(artist, title, durationMs) })
+                add(Lane("kuwo") { KuwoSource.resolve(artist, title, durationMs) })
+                add(Lane("qq") { QQSource.resolve(artist, title, durationMs) })
+                add(Lane("online-resolve", lastResort = true) { OnlineResolveSource.resolve(artist, title, durationMs, spotifyTrackId) })
+                add(Lane("waptrick", lastResort = true) { WaptrickSource.resolve(artist, title, durationMs) })
+            }
             localYtDlSource?.let { yt ->
                 when {
-                    knownYtId != null -> add("yt-dlp (id)" to { yt.resolveWithVideoId(knownYtId) })
-                    textQuery.isNotBlank() -> add("yt-dlp" to { yt.resolveWithQuery(textQuery, durationMs, artist, title) })
+                    knownYtId != null -> add(Lane("yt-dlp (id)") { yt.resolveWithVideoId(knownYtId) })
+                    textQuery.isNotBlank() -> add(Lane("yt-dlp") { yt.resolveWithQuery(textQuery, durationMs, artist, title) })
                 }
             }
         }
@@ -139,30 +145,38 @@ object StreamResolver {
         }
     }
 
+    /** Un couloir de la course ; lastResort : son lien ne sert que si tous les couloirs normaux échouent. */
+    private class Lane(val name: String, val lastResort: Boolean = false, val run: () -> ResolvedStream?)
+
     /**
      * Lance les couloirs en parallèle et rend le premier lien obtenu, ou null si tous échouent
      * ou si le délai expire. Les couloirs tournent hors de la portée de l'appelant : le gagnant est
      * rendu tout de suite, sans attendre les perdants (yt-dlp ne s'interrompt pas en cours d'appel).
+     * Les liens de dernier choix sont gardés, et le premier de la liste sert si aucun couloir normal n'a gagné.
      */
-    private fun race(lanes: List<Pair<String, () -> ResolvedStream?>>): ResolvedStream? {
+    private fun race(lanes: List<Lane>): ResolvedStream? {
         if (lanes.isEmpty()) return null
         val winner = CompletableDeferred<ResolvedStream?>()
         val pending = AtomicInteger(lanes.size)
+        val reserves = ConcurrentHashMap<Int, ResolvedStream>()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-        for ((name, lane) in lanes) {
+        lanes.forEachIndexed { i, lane ->
             scope.launch {
                 val stream = try {
-                    lane().also { if (it == null) android.util.Log.d(TAG, "Couloir $name : aucun lien") }
+                    lane.run().also { if (it == null) android.util.Log.d(TAG, "Couloir ${lane.name} : aucun lien") }
                 } catch (e: Exception) {
-                    android.util.Log.w(TAG, "Couloir $name : ${e.message}")
+                    android.util.Log.w(TAG, "Couloir ${lane.name} : ${e.message}")
                     null
                 }
-                if (stream != null) winner.complete(stream)
+                if (stream != null) {
+                    if (lane.lastResort) reserves[i] = stream else winner.complete(stream)
+                }
                 if (pending.decrementAndGet() == 0) winner.complete(null)
             }
         }
         return try {
             runBlocking { withTimeoutOrNull(RACE_TIMEOUT_MS) { winner.await() } }
+                ?: reserves.keys.minOrNull()?.let { reserves[it] }
         } finally {
             scope.cancel()
         }

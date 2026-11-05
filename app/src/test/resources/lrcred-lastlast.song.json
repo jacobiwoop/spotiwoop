@@ -1,0 +1,3412 @@
+{
+  "album": "Love, Damini",
+  "artist": "Burna Boy",
+  "color": "#951615",
+  "cover": "https://lrc.red/s/USAT22204901.webp",
+  "duration": 172.342,
+  "featured": [],
+  "genres": [
+    "Pop"
+  ],
+  "id": "USAT22204901",
+  "language": "en",
+  "level": "word",
+  "lyrics": {
+    "duration": 172.34199999999998,
+    "lines": [
+      {
+        "begin": 0.0,
+        "end": 2.6,
+        "first": true,
+        "part": "Intro",
+        "text": "E don cast, last last",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 0.0,
+              "end": 0.22,
+              "text": "E"
+            }
+          ],
+          [
+            {
+              "begin": 0.22,
+              "end": 0.583,
+              "text": "don"
+            }
+          ],
+          [
+            {
+              "begin": 0.583,
+              "end": 1.183,
+              "text": "cast,"
+            }
+          ],
+          [
+            {
+              "begin": 1.557,
+              "end": 1.929,
+              "text": "last"
+            }
+          ],
+          [
+            {
+              "begin": 1.929,
+              "end": 2.6,
+              "text": "last"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 2.944,
+        "end": 5.344,
+        "first": false,
+        "text": "Na everybody go chop breakfast",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 2.944,
+              "end": 3.07,
+              "text": "Na"
+            }
+          ],
+          [
+            {
+              "begin": 3.07,
+              "end": 3.819,
+              "text": "everybody"
+            }
+          ],
+          [
+            {
+              "begin": 3.819,
+              "end": 4.069,
+              "text": "go"
+            }
+          ],
+          [
+            {
+              "begin": 4.069,
+              "end": 4.342,
+              "text": "chop"
+            }
+          ],
+          [
+            {
+              "begin": 4.342,
+              "end": 4.638,
+              "text": "break"
+            },
+            {
+              "begin": 4.638,
+              "end": 5.344,
+              "text": "fast"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 5.408,
+        "end": 7.768,
+        "first": false,
+        "text": "Shayo!",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 5.408,
+              "end": 5.979,
+              "text": "Sha"
+            },
+            {
+              "begin": 5.979,
+              "end": 7.768,
+              "text": "yo!"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 8.517,
+        "end": 9.108,
+        "first": false,
+        "text": "Yeah",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 8.517,
+              "end": 9.108,
+              "text": "Yeah"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 10.787,
+        "end": 13.441,
+        "first": false,
+        "text": "Shayo!",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 10.787,
+              "end": 11.479,
+              "text": "Sha"
+            },
+            {
+              "begin": 11.479,
+              "end": 13.441,
+              "text": "yo!"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 13.859,
+        "end": 15.783,
+        "first": false,
+        "text": "Igbo!",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 13.859,
+              "end": 15.783,
+              "text": "Igbo!"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 16.587,
+        "end": 18.443,
+        "first": true,
+        "part": "Verse",
+        "text": "You go bow for the result o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 16.587,
+              "end": 16.795,
+              "text": "You"
+            }
+          ],
+          [
+            {
+              "begin": 16.795,
+              "end": 16.956,
+              "text": "go"
+            }
+          ],
+          [
+            {
+              "begin": 16.956,
+              "end": 17.275,
+              "text": "bow"
+            }
+          ],
+          [
+            {
+              "begin": 17.275,
+              "end": 17.456,
+              "text": "for"
+            }
+          ],
+          [
+            {
+              "begin": 17.456,
+              "end": 17.622,
+              "text": "the"
+            }
+          ],
+          [
+            {
+              "begin": 17.622,
+              "end": 18.148,
+              "text": "result"
+            }
+          ],
+          [
+            {
+              "begin": 18.148,
+              "end": 18.443,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 19.045,
+        "end": 20.535,
+        "first": false,
+        "text": "Nothing to discuss o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 19.045,
+              "end": 19.524,
+              "text": "Nothing"
+            }
+          ],
+          [
+            {
+              "begin": 19.524,
+              "end": 19.719,
+              "text": "to"
+            }
+          ],
+          [
+            {
+              "begin": 19.719,
+              "end": 20.219,
+              "text": "discuss"
+            }
+          ],
+          [
+            {
+              "begin": 20.219,
+              "end": 20.535,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 20.591,
+        "end": 24.039,
+        "first": false,
+        "text": "'Cause I dey win by default, I'm without any doubt o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 20.591,
+              "end": 20.74,
+              "text": "'Cause"
+            }
+          ],
+          [
+            {
+              "begin": 20.74,
+              "end": 20.904,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 20.904,
+              "end": 21.075,
+              "text": "dey"
+            }
+          ],
+          [
+            {
+              "begin": 21.075,
+              "end": 21.418,
+              "text": "win"
+            }
+          ],
+          [
+            {
+              "begin": 21.418,
+              "end": 21.796,
+              "text": "by"
+            }
+          ],
+          [
+            {
+              "begin": 21.796,
+              "end": 22.311,
+              "text": "default,"
+            }
+          ],
+          [
+            {
+              "begin": 22.311,
+              "end": 22.499,
+              "text": "I'm"
+            }
+          ],
+          [
+            {
+              "begin": 22.499,
+              "end": 22.986,
+              "text": "without"
+            }
+          ],
+          [
+            {
+              "begin": 22.986,
+              "end": 23.33,
+              "text": "any"
+            }
+          ],
+          [
+            {
+              "begin": 23.33,
+              "end": 23.755,
+              "text": "doubt"
+            }
+          ],
+          [
+            {
+              "begin": 23.755,
+              "end": 24.039,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 24.014,
+        "end": 25.988,
+        "first": false,
+        "text": "Omo me I be adult o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 24.014,
+              "end": 24.466,
+              "text": "Omo"
+            }
+          ],
+          [
+            {
+              "begin": 24.466,
+              "end": 24.781,
+              "text": "me"
+            }
+          ],
+          [
+            {
+              "begin": 24.781,
+              "end": 24.948,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 24.948,
+              "end": 25.138,
+              "text": "be"
+            }
+          ],
+          [
+            {
+              "begin": 25.138,
+              "end": 25.725,
+              "text": "adult"
+            }
+          ],
+          [
+            {
+              "begin": 25.725,
+              "end": 25.988,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 25.997,
+        "bg": {
+          "begin": 27.318,
+          "end": 29.895,
+          "text": "(I no go fit take your insult o!)",
+          "words": [
+            [
+              {
+                "begin": 27.318,
+                "end": 27.502,
+                "text": "(I"
+              }
+            ],
+            [
+              {
+                "begin": 27.502,
+                "end": 27.722,
+                "text": "no"
+              }
+            ],
+            [
+              {
+                "begin": 27.722,
+                "end": 27.883,
+                "text": "go"
+              }
+            ],
+            [
+              {
+                "begin": 27.883,
+                "end": 28.225,
+                "text": "fit"
+              }
+            ],
+            [
+              {
+                "begin": 28.225,
+                "end": 28.418,
+                "text": "take"
+              }
+            ],
+            [
+              {
+                "begin": 28.418,
+                "end": 28.622,
+                "text": "your"
+              }
+            ],
+            [
+              {
+                "begin": 28.622,
+                "end": 29.089,
+                "text": "insult"
+              }
+            ],
+            [
+              {
+                "begin": 29.089,
+                "end": 29.895,
+                "text": "o!)"
+              }
+            ]
+          ]
+        },
+        "end": 27.273,
+        "first": false,
+        "text": "I no go fit take your—",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 25.997,
+              "end": 26.097,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 26.097,
+              "end": 26.348,
+              "text": "no"
+            }
+          ],
+          [
+            {
+              "begin": 26.348,
+              "end": 26.538,
+              "text": "go"
+            }
+          ],
+          [
+            {
+              "begin": 26.538,
+              "end": 26.884,
+              "text": "fit"
+            }
+          ],
+          [
+            {
+              "begin": 26.884,
+              "end": 27.032,
+              "text": "take"
+            }
+          ],
+          [
+            {
+              "begin": 27.032,
+              "end": 27.273,
+              "text": "your—"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 29.583,
+        "end": 31.405,
+        "first": false,
+        "text": "Omo mind as you dey talk o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 29.583,
+              "end": 30.055,
+              "text": "Omo"
+            }
+          ],
+          [
+            {
+              "begin": 30.055,
+              "end": 30.394,
+              "text": "mind"
+            }
+          ],
+          [
+            {
+              "begin": 30.394,
+              "end": 30.54,
+              "text": "as"
+            }
+          ],
+          [
+            {
+              "begin": 30.54,
+              "end": 30.682,
+              "text": "you"
+            }
+          ],
+          [
+            {
+              "begin": 30.682,
+              "end": 30.918,
+              "text": "dey"
+            }
+          ],
+          [
+            {
+              "begin": 30.918,
+              "end": 31.305,
+              "text": "talk"
+            }
+          ],
+          [
+            {
+              "begin": 31.305,
+              "end": 31.405,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 31.473,
+        "end": 33.177,
+        "first": false,
+        "text": "I put my life into my job",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 31.473,
+              "end": 31.682,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 31.682,
+              "end": 31.877,
+              "text": "put"
+            }
+          ],
+          [
+            {
+              "begin": 31.877,
+              "end": 32.043,
+              "text": "my"
+            }
+          ],
+          [
+            {
+              "begin": 32.043,
+              "end": 32.364,
+              "text": "life"
+            }
+          ],
+          [
+            {
+              "begin": 32.364,
+              "end": 32.623,
+              "text": "into"
+            }
+          ],
+          [
+            {
+              "begin": 32.623,
+              "end": 32.837,
+              "text": "my"
+            }
+          ],
+          [
+            {
+              "begin": 32.837,
+              "end": 33.177,
+              "text": "job"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 33.185,
+        "end": 34.871,
+        "first": false,
+        "text": "And I know I'm in trouble",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 33.185,
+              "end": 33.363,
+              "text": "And"
+            }
+          ],
+          [
+            {
+              "begin": 33.363,
+              "end": 33.509,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 33.509,
+              "end": 33.875,
+              "text": "know"
+            }
+          ],
+          [
+            {
+              "begin": 33.875,
+              "end": 34.009,
+              "text": "I'm"
+            }
+          ],
+          [
+            {
+              "begin": 34.009,
+              "end": 34.173,
+              "text": "in"
+            }
+          ],
+          [
+            {
+              "begin": 34.173,
+              "end": 34.871,
+              "text": "trouble"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 34.991,
+        "end": 38.281,
+        "first": false,
+        "text": "She manipulate my love o, hmm",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 34.991,
+              "end": 35.235,
+              "text": "She"
+            }
+          ],
+          [
+            {
+              "begin": 35.235,
+              "end": 36.078,
+              "text": "manipulate"
+            }
+          ],
+          [
+            {
+              "begin": 36.078,
+              "end": 36.339,
+              "text": "my"
+            }
+          ],
+          [
+            {
+              "begin": 36.339,
+              "end": 36.793,
+              "text": "love"
+            }
+          ],
+          [
+            {
+              "begin": 36.793,
+              "end": 37.456,
+              "text": "o,"
+            }
+          ],
+          [
+            {
+              "begin": 37.456,
+              "end": 38.281,
+              "text": "hmm"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 38.152,
+        "end": 41.88,
+        "first": false,
+        "text": "I no holy and I no denge pose",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 38.152,
+              "end": 38.498,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 38.498,
+              "end": 38.882,
+              "text": "no"
+            }
+          ],
+          [
+            {
+              "begin": 38.882,
+              "end": 39.822,
+              "text": "holy"
+            }
+          ],
+          [
+            {
+              "begin": 39.822,
+              "end": 39.996,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 39.996,
+              "end": 40.157,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 40.157,
+              "end": 40.49,
+              "text": "no"
+            }
+          ],
+          [
+            {
+              "begin": 40.49,
+              "end": 41.18,
+              "text": "denge"
+            }
+          ],
+          [
+            {
+              "begin": 41.18,
+              "end": 41.88,
+              "text": "pose"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 41.893,
+        "end": 45.949,
+        "first": false,
+        "text": "Like baba frio, my eye o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 41.893,
+              "end": 42.232,
+              "text": "Like"
+            }
+          ],
+          [
+            {
+              "begin": 42.232,
+              "end": 42.922,
+              "text": "baba"
+            }
+          ],
+          [
+            {
+              "begin": 42.922,
+              "end": 43.937,
+              "text": "frio,"
+            }
+          ],
+          [
+            {
+              "begin": 43.937,
+              "end": 44.283,
+              "text": "my"
+            }
+          ],
+          [
+            {
+              "begin": 44.283,
+              "end": 44.71,
+              "text": "eye"
+            }
+          ],
+          [
+            {
+              "begin": 44.71,
+              "end": 45.949,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 46.042,
+        "end": 47.086,
+        "first": false,
+        "text": "Don cry o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 46.042,
+              "end": 46.363,
+              "text": "Don"
+            }
+          ],
+          [
+            {
+              "begin": 46.363,
+              "end": 46.78,
+              "text": "cry"
+            }
+          ],
+          [
+            {
+              "begin": 46.78,
+              "end": 47.086,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 47.155,
+        "bg": {
+          "begin": 49.053,
+          "end": 49.781,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 49.053,
+                "end": 49.781,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 49.09,
+        "first": true,
+        "part": "Chorus",
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 47.155,
+              "end": 47.429,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 47.429,
+              "end": 47.696,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 47.696,
+              "end": 48.166,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 48.166,
+              "end": 48.315,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 48.315,
+              "end": 49.09,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 49.757,
+        "bg": {
+          "begin": 51.714,
+          "end": 52.429,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 51.714,
+                "end": 52.429,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 51.785,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 49.757,
+              "end": 50.049,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 50.049,
+              "end": 50.286,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 50.286,
+              "end": 50.78,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 50.78,
+              "end": 51.048,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 51.048,
+              "end": 51.785,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 52.509,
+        "bg": {
+          "begin": 54.53,
+          "end": 55.122,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 54.53,
+                "end": 55.122,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 54.545,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 52.509,
+              "end": 52.806,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 52.806,
+              "end": 53.036,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 53.036,
+              "end": 53.568,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 53.568,
+              "end": 53.842,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 53.842,
+              "end": 54.545,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 55.176,
+        "bg": {
+          "begin": 57.255,
+          "end": 57.964,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 57.255,
+                "end": 57.964,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 57.211,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 55.176,
+              "end": 55.537,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 55.537,
+              "end": 55.854,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 55.854,
+              "end": 56.36,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 56.36,
+              "end": 56.58,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 56.58,
+              "end": 57.211,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 57.797,
+        "bg": {
+          "begin": 58.615,
+          "end": 60.743,
+          "text": "(Shayo, shayo)",
+          "words": [
+            [
+              {
+                "begin": 58.615,
+                "end": 59.36,
+                "text": "(Shayo,"
+              }
+            ],
+            [
+              {
+                "begin": 59.988,
+                "end": 60.743,
+                "text": "shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 60.015,
+        "first": false,
+        "text": "Shayo, shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 57.797,
+              "end": 58.624,
+              "text": "Shayo,"
+            }
+          ],
+          [
+            {
+              "begin": 59.322,
+              "end": 60.015,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 60.649,
+        "bg": {
+          "begin": 62.696,
+          "end": 63.491,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 62.696,
+                "end": 63.491,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 62.734,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 60.649,
+              "end": 61.012,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 61.012,
+              "end": 61.268,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 61.268,
+              "end": 61.446,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 61.446,
+              "end": 62.095,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 62.095,
+              "end": 62.734,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 63.56,
+        "bg": {
+          "begin": 65.44,
+          "end": 66.216,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 65.44,
+                "end": 66.216,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 65.578,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 63.56,
+              "end": 63.708,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 63.708,
+              "end": 63.876,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 63.876,
+              "end": 64.381,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 64.381,
+              "end": 64.703,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 64.703,
+              "end": 65.578,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 66.106,
+        "bg": {
+          "begin": 68.131,
+          "end": 68.918,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 68.131,
+                "end": 68.918,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 68.101,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 66.106,
+              "end": 66.392,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 66.392,
+              "end": 66.641,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 66.641,
+              "end": 67.147,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 67.147,
+              "end": 67.349,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 67.349,
+              "end": 68.101,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 68.86,
+        "bg": {
+          "begin": 69.568,
+          "end": 71.726,
+          "text": "(Shayo, shayo)",
+          "words": [
+            [
+              {
+                "begin": 69.568,
+                "end": 70.344,
+                "text": "(Shayo,"
+              }
+            ],
+            [
+              {
+                "begin": 71.002,
+                "end": 71.726,
+                "text": "shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 71.053,
+        "first": false,
+        "text": "Shayo, shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 68.86,
+              "end": 69.632,
+              "text": "Shayo,"
+            }
+          ],
+          [
+            {
+              "begin": 70.144,
+              "end": 71.053,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 71.643,
+        "end": 73.906,
+        "first": true,
+        "part": "Verse",
+        "text": "I dey Port-Harcourt when them kill Soboma",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 71.643,
+              "end": 71.873,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 71.873,
+              "end": 72.063,
+              "text": "dey"
+            }
+          ],
+          [
+            {
+              "begin": 72.063,
+              "end": 72.561,
+              "text": "Port-Harcourt"
+            }
+          ],
+          [
+            {
+              "begin": 72.561,
+              "end": 72.708,
+              "text": "when"
+            }
+          ],
+          [
+            {
+              "begin": 72.708,
+              "end": 72.953,
+              "text": "them"
+            }
+          ],
+          [
+            {
+              "begin": 72.953,
+              "end": 73.178,
+              "text": "kill"
+            }
+          ],
+          [
+            {
+              "begin": 73.178,
+              "end": 73.906,
+              "text": "Soboma"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 74.042,
+        "end": 76.689,
+        "first": false,
+        "text": "I dey try to buy motor, one Toyota Corolla",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 74.042,
+              "end": 74.142,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 74.142,
+              "end": 74.268,
+              "text": "dey"
+            }
+          ],
+          [
+            {
+              "begin": 74.268,
+              "end": 74.441,
+              "text": "try"
+            }
+          ],
+          [
+            {
+              "begin": 74.441,
+              "end": 74.607,
+              "text": "to"
+            }
+          ],
+          [
+            {
+              "begin": 74.607,
+              "end": 74.804,
+              "text": "buy"
+            }
+          ],
+          [
+            {
+              "begin": 74.804,
+              "end": 75.339,
+              "text": "motor,"
+            }
+          ],
+          [
+            {
+              "begin": 75.339,
+              "end": 75.494,
+              "text": "one"
+            }
+          ],
+          [
+            {
+              "begin": 75.494,
+              "end": 75.984,
+              "text": "Toyota"
+            }
+          ],
+          [
+            {
+              "begin": 75.984,
+              "end": 76.689,
+              "text": "Corolla"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 76.773,
+        "end": 79.43299999999999,
+        "first": false,
+        "text": "My feelings been dey swing like Jangolover",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 76.773,
+              "end": 76.977,
+              "text": "My"
+            }
+          ],
+          [
+            {
+              "begin": 76.977,
+              "end": 77.364,
+              "text": "feelings"
+            }
+          ],
+          [
+            {
+              "begin": 77.364,
+              "end": 77.55,
+              "text": "been"
+            }
+          ],
+          [
+            {
+              "begin": 77.55,
+              "end": 77.687,
+              "text": "dey"
+            }
+          ],
+          [
+            {
+              "begin": 77.687,
+              "end": 78.081,
+              "text": "swing"
+            }
+          ],
+          [
+            {
+              "begin": 78.081,
+              "end": 78.465,
+              "text": "like"
+            }
+          ],
+          [
+            {
+              "begin": 78.465,
+              "end": 79.43299999999999,
+              "text": "Jangolover"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 79.60300000000001,
+        "end": 82.122,
+        "first": false,
+        "text": "Feelings been dey swing like Jangolover",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 79.60300000000001,
+              "end": 80.14,
+              "text": "Feelings"
+            }
+          ],
+          [
+            {
+              "begin": 80.14,
+              "end": 80.321,
+              "text": "been"
+            }
+          ],
+          [
+            {
+              "begin": 80.321,
+              "end": 80.464,
+              "text": "dey"
+            }
+          ],
+          [
+            {
+              "begin": 80.464,
+              "end": 80.773,
+              "text": "swing"
+            }
+          ],
+          [
+            {
+              "begin": 80.773,
+              "end": 81.138,
+              "text": "like"
+            }
+          ],
+          [
+            {
+              "begin": 81.138,
+              "end": 82.122,
+              "text": "Jangolover"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 82.104,
+        "end": 84.92,
+        "first": false,
+        "text": "Now you crash your Ferrari for lekki Burna",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 82.104,
+              "end": 82.455,
+              "text": "Now"
+            }
+          ],
+          [
+            {
+              "begin": 82.455,
+              "end": 82.616,
+              "text": "you"
+            }
+          ],
+          [
+            {
+              "begin": 82.616,
+              "end": 82.818,
+              "text": "crash"
+            }
+          ],
+          [
+            {
+              "begin": 82.818,
+              "end": 82.961,
+              "text": "your"
+            }
+          ],
+          [
+            {
+              "begin": 82.961,
+              "end": 83.669,
+              "text": "Ferrari"
+            }
+          ],
+          [
+            {
+              "begin": 83.669,
+              "end": 83.895,
+              "text": "for"
+            }
+          ],
+          [
+            {
+              "begin": 83.895,
+              "end": 84.371,
+              "text": "lekki"
+            }
+          ],
+          [
+            {
+              "begin": 84.371,
+              "end": 84.92,
+              "text": "Burna"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 84.93,
+        "end": 87.657,
+        "first": false,
+        "text": "Na small thing remain could have been all over",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 84.93,
+              "end": 85.18,
+              "text": "Na"
+            }
+          ],
+          [
+            {
+              "begin": 85.18,
+              "end": 85.52199999999999,
+              "text": "small"
+            }
+          ],
+          [
+            {
+              "begin": 85.52199999999999,
+              "end": 85.707,
+              "text": "thing"
+            }
+          ],
+          [
+            {
+              "begin": 85.707,
+              "end": 86.243,
+              "text": "remain"
+            }
+          ],
+          [
+            {
+              "begin": 86.243,
+              "end": 86.43299999999999,
+              "text": "could"
+            }
+          ],
+          [
+            {
+              "begin": 86.43299999999999,
+              "end": 86.68299999999999,
+              "text": "have"
+            }
+          ],
+          [
+            {
+              "begin": 86.68299999999999,
+              "end": 86.96000000000001,
+              "text": "been"
+            }
+          ],
+          [
+            {
+              "begin": 86.96000000000001,
+              "end": 87.139,
+              "text": "all"
+            }
+          ],
+          [
+            {
+              "begin": 87.139,
+              "end": 87.657,
+              "text": "over"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 87.827,
+        "end": 90.485,
+        "first": false,
+        "text": "My feelings took a swing like Jangolover",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 87.827,
+              "end": 88.01599999999999,
+              "text": "My"
+            }
+          ],
+          [
+            {
+              "begin": 88.01599999999999,
+              "end": 88.385,
+              "text": "feelings"
+            }
+          ],
+          [
+            {
+              "begin": 88.385,
+              "end": 88.527,
+              "text": "took"
+            }
+          ],
+          [
+            {
+              "begin": 88.527,
+              "end": 88.66499999999999,
+              "text": "a"
+            }
+          ],
+          [
+            {
+              "begin": 88.66499999999999,
+              "end": 88.992,
+              "text": "swing"
+            }
+          ],
+          [
+            {
+              "begin": 88.992,
+              "end": 89.331,
+              "text": "like"
+            }
+          ],
+          [
+            {
+              "begin": 89.331,
+              "end": 90.485,
+              "text": "Jangolover"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 90.60300000000001,
+        "end": 92.189,
+        "first": false,
+        "text": "Feelings took a swing like—",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 90.60300000000001,
+              "end": 90.968,
+              "text": "Feelings"
+            }
+          ],
+          [
+            {
+              "begin": 90.968,
+              "end": 91.15299999999999,
+              "text": "took"
+            }
+          ],
+          [
+            {
+              "begin": 91.15299999999999,
+              "end": 91.27799999999999,
+              "text": "a"
+            }
+          ],
+          [
+            {
+              "begin": 91.27799999999999,
+              "end": 91.67099999999999,
+              "text": "swing"
+            }
+          ],
+          [
+            {
+              "begin": 91.67099999999999,
+              "end": 92.189,
+              "text": "like—"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 92.344,
+        "end": 94.74799999999999,
+        "first": true,
+        "part": "Verse",
+        "text": "Ti n ba ni ke juru e juru",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 92.344,
+              "end": 92.475,
+              "text": "Ti"
+            }
+          ],
+          [
+            {
+              "begin": 92.475,
+              "end": 92.575,
+              "text": "n"
+            }
+          ],
+          [
+            {
+              "begin": 92.575,
+              "end": 92.816,
+              "text": "ba"
+            }
+          ],
+          [
+            {
+              "begin": 92.816,
+              "end": 93.09,
+              "text": "ni"
+            }
+          ],
+          [
+            {
+              "begin": 93.09,
+              "end": 93.449,
+              "text": "ke"
+            }
+          ],
+          [
+            {
+              "begin": 93.449,
+              "end": 93.93299999999999,
+              "text": "juru"
+            }
+          ],
+          [
+            {
+              "begin": 93.93299999999999,
+              "end": 94.143,
+              "text": "e"
+            }
+          ],
+          [
+            {
+              "begin": 94.143,
+              "end": 94.74799999999999,
+              "text": "juru"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 95.02199999999999,
+        "end": 97.531,
+        "first": false,
+        "text": "Omo why to'o ki nfe ni suru",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 95.02199999999999,
+              "end": 95.481,
+              "text": "Omo"
+            }
+          ],
+          [
+            {
+              "begin": 95.481,
+              "end": 95.795,
+              "text": "why"
+            }
+          ],
+          [
+            {
+              "begin": 95.795,
+              "end": 96.184,
+              "text": "to'o"
+            }
+          ],
+          [
+            {
+              "begin": 96.184,
+              "end": 96.28399999999999,
+              "text": "ki"
+            }
+          ],
+          [
+            {
+              "begin": 96.28399999999999,
+              "end": 96.536,
+              "text": "nfe"
+            }
+          ],
+          [
+            {
+              "begin": 96.536,
+              "end": 96.703,
+              "text": "ni"
+            }
+          ],
+          [
+            {
+              "begin": 96.703,
+              "end": 97.531,
+              "text": "suru"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 97.695,
+        "end": 99.833,
+        "first": false,
+        "text": "Why you say I did nothing for you?",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 97.695,
+              "end": 97.917,
+              "text": "Why"
+            }
+          ],
+          [
+            {
+              "begin": 97.917,
+              "end": 98.048,
+              "text": "you"
+            }
+          ],
+          [
+            {
+              "begin": 98.048,
+              "end": 98.244,
+              "text": "say"
+            }
+          ],
+          [
+            {
+              "begin": 98.244,
+              "end": 98.434,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 98.434,
+              "end": 98.773,
+              "text": "did"
+            }
+          ],
+          [
+            {
+              "begin": 98.773,
+              "end": 99.25,
+              "text": "nothing"
+            }
+          ],
+          [
+            {
+              "begin": 99.25,
+              "end": 99.499,
+              "text": "for"
+            }
+          ],
+          [
+            {
+              "begin": 99.499,
+              "end": 99.833,
+              "text": "you?"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 99.833,
+        "end": 103.13300000000001,
+        "first": false,
+        "text": "When I for do anything you want me to do",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 99.833,
+              "end": 100.20400000000001,
+              "text": "When"
+            }
+          ],
+          [
+            {
+              "begin": 100.20400000000001,
+              "end": 100.321,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 100.321,
+              "end": 100.572,
+              "text": "for"
+            }
+          ],
+          [
+            {
+              "begin": 100.572,
+              "end": 100.84100000000001,
+              "text": "do"
+            }
+          ],
+          [
+            {
+              "begin": 100.84100000000001,
+              "end": 101.356,
+              "text": "anything"
+            }
+          ],
+          [
+            {
+              "begin": 101.356,
+              "end": 101.56700000000001,
+              "text": "you"
+            }
+          ],
+          [
+            {
+              "begin": 101.56700000000001,
+              "end": 102.101,
+              "text": "want"
+            }
+          ],
+          [
+            {
+              "begin": 102.101,
+              "end": 102.37899999999999,
+              "text": "me"
+            }
+          ],
+          [
+            {
+              "begin": 102.37899999999999,
+              "end": 102.707,
+              "text": "to"
+            }
+          ],
+          [
+            {
+              "begin": 102.707,
+              "end": 103.13300000000001,
+              "text": "do"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 103.14,
+        "end": 105.682,
+        "first": false,
+        "text": "Ti n ba ni ke juru e juru",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 103.14,
+              "end": 103.539,
+              "text": "Ti"
+            }
+          ],
+          [
+            {
+              "begin": 103.539,
+              "end": 103.63900000000001,
+              "text": "n"
+            }
+          ],
+          [
+            {
+              "begin": 103.63900000000001,
+              "end": 103.83,
+              "text": "ba"
+            }
+          ],
+          [
+            {
+              "begin": 103.83,
+              "end": 104.104,
+              "text": "ni"
+            }
+          ],
+          [
+            {
+              "begin": 104.104,
+              "end": 104.479,
+              "text": "ke"
+            }
+          ],
+          [
+            {
+              "begin": 104.479,
+              "end": 104.77600000000001,
+              "text": "juru"
+            }
+          ],
+          [
+            {
+              "begin": 104.77600000000001,
+              "end": 104.97800000000001,
+              "text": "e"
+            }
+          ],
+          [
+            {
+              "begin": 104.97800000000001,
+              "end": 105.682,
+              "text": "juru"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 106.009,
+        "end": 108.459,
+        "first": false,
+        "text": "Omo why to'o ki nfe ni suru",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 106.009,
+              "end": 106.33,
+              "text": "Omo"
+            }
+          ],
+          [
+            {
+              "begin": 106.33,
+              "end": 106.652,
+              "text": "why"
+            }
+          ],
+          [
+            {
+              "begin": 106.652,
+              "end": 106.90100000000001,
+              "text": "to'o"
+            }
+          ],
+          [
+            {
+              "begin": 106.90100000000001,
+              "end": 107.062,
+              "text": "ki"
+            }
+          ],
+          [
+            {
+              "begin": 107.062,
+              "end": 107.538,
+              "text": "nfe"
+            }
+          ],
+          [
+            {
+              "begin": 107.538,
+              "end": 107.663,
+              "text": "ni"
+            }
+          ],
+          [
+            {
+              "begin": 107.663,
+              "end": 108.459,
+              "text": "suru"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 108.751,
+        "end": 110.831,
+        "first": false,
+        "text": "Why you say I did nothing for you?",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 108.751,
+              "end": 108.896,
+              "text": "Why"
+            }
+          ],
+          [
+            {
+              "begin": 108.896,
+              "end": 109.061,
+              "text": "you"
+            }
+          ],
+          [
+            {
+              "begin": 109.061,
+              "end": 109.24799999999999,
+              "text": "say"
+            }
+          ],
+          [
+            {
+              "begin": 109.24799999999999,
+              "end": 109.39099999999999,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 109.39099999999999,
+              "end": 109.811,
+              "text": "did"
+            }
+          ],
+          [
+            {
+              "begin": 109.811,
+              "end": 110.304,
+              "text": "nothing"
+            }
+          ],
+          [
+            {
+              "begin": 110.304,
+              "end": 110.602,
+              "text": "for"
+            }
+          ],
+          [
+            {
+              "begin": 110.602,
+              "end": 110.831,
+              "text": "you?"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 110.831,
+        "end": 114.081,
+        "first": false,
+        "text": "When I for do anything you want me to do",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 110.831,
+              "end": 111.137,
+              "text": "When"
+            }
+          ],
+          [
+            {
+              "begin": 111.137,
+              "end": 111.263,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 111.263,
+              "end": 111.50200000000001,
+              "text": "for"
+            }
+          ],
+          [
+            {
+              "begin": 111.50200000000001,
+              "end": 111.805,
+              "text": "do"
+            }
+          ],
+          [
+            {
+              "begin": 111.805,
+              "end": 112.286,
+              "text": "anything"
+            }
+          ],
+          [
+            {
+              "begin": 112.286,
+              "end": 112.543,
+              "text": "you"
+            }
+          ],
+          [
+            {
+              "begin": 112.543,
+              "end": 112.931,
+              "text": "want"
+            }
+          ],
+          [
+            {
+              "begin": 112.931,
+              "end": 113.163,
+              "text": "me"
+            }
+          ],
+          [
+            {
+              "begin": 113.163,
+              "end": 113.50200000000001,
+              "text": "to"
+            }
+          ],
+          [
+            {
+              "begin": 113.50200000000001,
+              "end": 114.081,
+              "text": "do"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 114.087,
+        "end": 115.509,
+        "first": true,
+        "part": "Bridge",
+        "text": "Maybe another time",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 114.087,
+              "end": 114.451,
+              "text": "Maybe"
+            }
+          ],
+          [
+            {
+              "begin": 114.451,
+              "end": 114.943,
+              "text": "another"
+            }
+          ],
+          [
+            {
+              "begin": 114.943,
+              "end": 115.509,
+              "text": "time"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 115.52000000000001,
+        "end": 120.26,
+        "first": false,
+        "text": "Maybe another life you'll be my wife and we'll get it right",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 115.52000000000001,
+              "end": 115.87700000000001,
+              "text": "Maybe"
+            }
+          ],
+          [
+            {
+              "begin": 115.87700000000001,
+              "end": 116.57300000000001,
+              "text": "another"
+            }
+          ],
+          [
+            {
+              "begin": 116.57300000000001,
+              "end": 117.293,
+              "text": "life"
+            }
+          ],
+          [
+            {
+              "begin": 117.293,
+              "end": 117.907,
+              "text": "you'll"
+            }
+          ],
+          [
+            {
+              "begin": 117.907,
+              "end": 118.065,
+              "text": "be"
+            }
+          ],
+          [
+            {
+              "begin": 118.065,
+              "end": 118.243,
+              "text": "my"
+            }
+          ],
+          [
+            {
+              "begin": 118.243,
+              "end": 118.618,
+              "text": "wife"
+            }
+          ],
+          [
+            {
+              "begin": 118.618,
+              "end": 118.782,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 118.782,
+              "end": 118.947,
+              "text": "we'll"
+            }
+          ],
+          [
+            {
+              "begin": 118.947,
+              "end": 119.10300000000001,
+              "text": "get"
+            }
+          ],
+          [
+            {
+              "begin": 119.10300000000001,
+              "end": 119.25,
+              "text": "it"
+            }
+          ],
+          [
+            {
+              "begin": 119.25,
+              "end": 120.26,
+              "text": "right"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 120.273,
+        "end": 121.382,
+        "first": false,
+        "text": "E don cast",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 120.273,
+              "end": 120.404,
+              "text": "E"
+            }
+          ],
+          [
+            {
+              "begin": 120.404,
+              "end": 120.565,
+              "text": "don"
+            }
+          ],
+          [
+            {
+              "begin": 120.565,
+              "end": 121.382,
+              "text": "cast"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 121.608,
+        "end": 122.851,
+        "first": false,
+        "text": "Last last",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 121.608,
+              "end": 121.961,
+              "text": "Last"
+            }
+          ],
+          [
+            {
+              "begin": 121.961,
+              "end": 122.851,
+              "text": "last"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 123.006,
+        "end": 125.185,
+        "first": false,
+        "text": "Na everybody go chop breakfast",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 123.006,
+              "end": 123.197,
+              "text": "Na"
+            }
+          ],
+          [
+            {
+              "begin": 123.197,
+              "end": 123.835,
+              "text": "everybody"
+            }
+          ],
+          [
+            {
+              "begin": 123.835,
+              "end": 124.017,
+              "text": "go"
+            }
+          ],
+          [
+            {
+              "begin": 124.017,
+              "end": 124.351,
+              "text": "chop"
+            }
+          ],
+          [
+            {
+              "begin": 124.351,
+              "end": 124.639,
+              "text": "break"
+            },
+            {
+              "begin": 124.639,
+              "end": 125.185,
+              "text": "fast"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 125.181,
+        "end": 127.832,
+        "first": false,
+        "text": "Have to say bye, bye o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 125.181,
+              "end": 125.336,
+              "text": "Have"
+            }
+          ],
+          [
+            {
+              "begin": 125.336,
+              "end": 125.461,
+              "text": "to"
+            }
+          ],
+          [
+            {
+              "begin": 125.461,
+              "end": 125.816,
+              "text": "say"
+            }
+          ],
+          [
+            {
+              "begin": 125.816,
+              "end": 126.105,
+              "text": "bye,"
+            }
+          ],
+          [
+            {
+              "begin": 126.105,
+              "end": 126.439,
+              "text": "bye"
+            }
+          ],
+          [
+            {
+              "begin": 126.439,
+              "end": 127.832,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 127.929,
+        "end": 129.027,
+        "first": false,
+        "text": "Bye, bye o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 127.929,
+              "end": 128.206,
+              "text": "Bye,"
+            }
+          ],
+          [
+            {
+              "begin": 128.206,
+              "end": 128.523,
+              "text": "bye"
+            }
+          ],
+          [
+            {
+              "begin": 128.523,
+              "end": 129.027,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 129.296,
+        "end": 131.096,
+        "first": false,
+        "text": "To the love of my life",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 129.296,
+              "end": 129.51,
+              "text": "To"
+            }
+          ],
+          [
+            {
+              "begin": 129.51,
+              "end": 129.61,
+              "text": "the"
+            }
+          ],
+          [
+            {
+              "begin": 129.61,
+              "end": 129.903,
+              "text": "love"
+            }
+          ],
+          [
+            {
+              "begin": 129.903,
+              "end": 130.26,
+              "text": "of"
+            }
+          ],
+          [
+            {
+              "begin": 130.26,
+              "end": 130.533,
+              "text": "my"
+            }
+          ],
+          [
+            {
+              "begin": 130.533,
+              "end": 131.096,
+              "text": "life"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 131.107,
+        "end": 134.345,
+        "first": false,
+        "text": "My eye o, don cry o",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 131.107,
+              "end": 131.512,
+              "text": "My"
+            }
+          ],
+          [
+            {
+              "begin": 131.512,
+              "end": 131.959,
+              "text": "eye"
+            }
+          ],
+          [
+            {
+              "begin": 131.959,
+              "end": 133.332,
+              "text": "o,"
+            }
+          ],
+          [
+            {
+              "begin": 133.332,
+              "end": 133.499,
+              "text": "don"
+            }
+          ],
+          [
+            {
+              "begin": 133.499,
+              "end": 134.016,
+              "text": "cry"
+            }
+          ],
+          [
+            {
+              "begin": 134.016,
+              "end": 134.345,
+              "text": "o"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 134.525,
+        "bg": {
+          "begin": 136.175,
+          "end": 138.753,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 136.175,
+                "end": 136.983,
+                "text": "(Sha"
+              },
+              {
+                "begin": 136.983,
+                "end": 138.753,
+                "text": "yo)"
+              }
+            ]
+          ]
+        },
+        "end": 136.555,
+        "first": true,
+        "part": "Chorus",
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 134.525,
+              "end": 134.65,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 134.65,
+              "end": 134.924,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 134.924,
+              "end": 135.369,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 135.369,
+              "end": 135.645,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 135.645,
+              "end": 136.555,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 137.195,
+        "bg": {
+          "begin": 139.013,
+          "end": 139.815,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 139.013,
+                "end": 139.815,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 139.67000000000002,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 137.195,
+              "end": 137.338,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 137.338,
+              "end": 137.522,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 137.522,
+              "end": 138.016,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 138.016,
+              "end": 138.29,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 138.29,
+              "end": 139.67000000000002,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 139.802,
+        "bg": {
+          "begin": 141.802,
+          "end": 144.376,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 141.802,
+                "end": 142.594,
+                "text": "(Sha"
+              },
+              {
+                "begin": 142.594,
+                "end": 144.376,
+                "text": "yo)"
+              }
+            ]
+          ]
+        },
+        "end": 141.861,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 139.802,
+              "end": 140.091,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 140.091,
+              "end": 140.323,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 140.323,
+              "end": 140.81,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 140.81,
+              "end": 141.036,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 141.036,
+              "end": 141.861,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 142.625,
+        "bg": {
+          "begin": 144.594,
+          "end": 145.323,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 144.594,
+                "end": 145.323,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 144.65,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 142.625,
+              "end": 142.839,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 142.839,
+              "end": 143.119,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 143.119,
+              "end": 143.619,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 143.619,
+              "end": 143.88,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 143.88,
+              "end": 144.65,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 145.11,
+        "bg": {
+          "begin": 145.916,
+          "end": 149.917,
+          "text": "(Shayo, shayo)",
+          "words": [
+            [
+              {
+                "begin": 145.916,
+                "end": 146.779,
+                "text": "(Shayo,"
+              }
+            ],
+            [
+              {
+                "begin": 147.184,
+                "end": 147.917,
+                "text": "sha"
+              },
+              {
+                "begin": 147.917,
+                "end": 149.917,
+                "text": "yo)"
+              }
+            ]
+          ]
+        },
+        "end": 147.349,
+        "first": false,
+        "text": "Shayo, shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 145.11,
+              "end": 146.041,
+              "text": "Shayo,"
+            }
+          ],
+          [
+            {
+              "begin": 146.527,
+              "end": 147.349,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 148.103,
+        "bg": {
+          "begin": 149.949,
+          "end": 150.768,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 149.949,
+                "end": 150.768,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 150.035,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 148.103,
+              "end": 148.293,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 148.293,
+              "end": 148.514,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 148.514,
+              "end": 149.001,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 149.001,
+              "end": 149.269,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 149.269,
+              "end": 150.035,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 150.656,
+        "bg": {
+          "begin": 152.63400000000001,
+          "end": 155.256,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 152.63400000000001,
+                "end": 153.21800000000002,
+                "text": "(Sha"
+              },
+              {
+                "begin": 153.21800000000002,
+                "end": 155.256,
+                "text": "yo)"
+              }
+            ]
+          ]
+        },
+        "end": 152.636,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 150.656,
+              "end": 150.912,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 150.912,
+              "end": 151.21,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 151.21,
+              "end": 151.654,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 151.654,
+              "end": 151.969,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 151.969,
+              "end": 152.636,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 153.514,
+        "bg": {
+          "begin": 155.519,
+          "end": 155.993,
+          "text": "(Shayo)",
+          "words": [
+            [
+              {
+                "begin": 155.519,
+                "end": 155.993,
+                "text": "(Shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 155.602,
+        "first": false,
+        "text": "I need igbo and shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 153.514,
+              "end": 153.621,
+              "text": "I"
+            }
+          ],
+          [
+            {
+              "begin": 153.621,
+              "end": 153.901,
+              "text": "need"
+            }
+          ],
+          [
+            {
+              "begin": 153.901,
+              "end": 154.389,
+              "text": "igbo"
+            }
+          ],
+          [
+            {
+              "begin": 154.389,
+              "end": 154.899,
+              "text": "and"
+            }
+          ],
+          [
+            {
+              "begin": 154.899,
+              "end": 155.602,
+              "text": "shayo"
+            }
+          ]
+        ]
+      },
+      {
+        "begin": 155.993,
+        "bg": {
+          "begin": 156.74099999999999,
+          "end": 159.023,
+          "text": "(Shayo, shayo)",
+          "words": [
+            [
+              {
+                "begin": 156.74099999999999,
+                "end": 157.66,
+                "text": "(Shayo,"
+              }
+            ],
+            [
+              {
+                "begin": 158.163,
+                "end": 159.023,
+                "text": "shayo)"
+              }
+            ]
+          ]
+        },
+        "end": 158.391,
+        "first": false,
+        "text": "Shayo, shayo",
+        "timed": true,
+        "voice": "a",
+        "words": [
+          [
+            {
+              "begin": 155.993,
+              "end": 156.80700000000002,
+              "text": "Shayo,"
+            }
+          ],
+          [
+            {
+              "begin": 157.543,
+              "end": 158.391,
+              "text": "shayo"
+            }
+          ]
+        ]
+      }
+    ],
+    "meta": {},
+    "sync": "word",
+    "timing": "word"
+  },
+  "released": "2022-05-13",
+  "songwriters": [
+    "Rodney Jerkins",
+    "Samuel Haataja",
+    "Robert Laukkanen",
+    "Mikael Haataja",
+    "Santeri Kauppinen",
+    "Lashawn Daniels",
+    "James Malcolm Olagundoye",
+    "Harvey Mason",
+    "Jr.",
+    "Fred Jerkins Lii",
+    "Damini Ebunoluwa Ogulu"
+  ],
+  "source": "<tt xmlns=\"http://www.w3.org/ns/ttml\" xmlns:lrc=\"http://lrc.red/lyric-ttml-internal\" xmlns:ttm=\"http://www.w3.org/ns/ttml#metadata\" lrc:timing=\"Word\" xml:lang=\"en\"><head><metadata><ttm:agent type=\"person\" xml:id=\"v1\"/><sourceMetadata xmlns=\"http://lrc.red/lyric-ttml-internal\" leadingSilence=\"0\"><translations/><songwriters><songwriter>Damini Ebunoluwa Ogulu</songwriter><songwriter>Fred Jerkins III</songwriter><songwriter>Harvey Mason</songwriter><songwriter>Jr.</songwriter><songwriter>James Malcolm Olagundoye</songwriter><songwriter>Lashawn Daniels</songwriter><songwriter>Mikael Haataja</songwriter><songwriter>Robert Laukkanen</songwriter><songwriter>Rodney Jerkins</songwriter><songwriter>Samuel Haataja</songwriter><songwriter>Santeri Kauppinen</songwriter></songwriters></sourceMetadata></metadata></head><body dur=\"2:52.342\"><div begin=\"0.000\" end=\"15.783\" lrc:songPart=\"Intro\"><p begin=\"0.000\" end=\"2.600\" lrc:key=\"L1\" ttm:agent=\"v1\"><span begin=\"0.000\" end=\"0.220\">E</span> <span begin=\"0.220\" end=\"0.583\">don</span> <span begin=\"0.583\" end=\"1.183\">cast,</span> <span begin=\"1.557\" end=\"1.929\">last</span> <span begin=\"1.929\" end=\"2.600\">last</span></p><p begin=\"2.944\" end=\"5.344\" lrc:key=\"L2\" ttm:agent=\"v1\"><span begin=\"2.944\" end=\"3.070\">Na</span> <span begin=\"3.070\" end=\"3.819\">everybody</span> <span begin=\"3.819\" end=\"4.069\">go</span> <span begin=\"4.069\" end=\"4.342\">chop</span> <span begin=\"4.342\" end=\"4.638\">break</span><span begin=\"4.638\" end=\"5.344\">fast</span></p><p begin=\"5.408\" end=\"7.768\" lrc:key=\"L3\" ttm:agent=\"v1\"><span begin=\"5.408\" end=\"5.979\">Sha</span><span begin=\"5.979\" end=\"7.768\">yo!</span></p><p begin=\"8.517\" end=\"9.108\" lrc:key=\"L4\" ttm:agent=\"v1\"><span begin=\"8.517\" end=\"9.108\">Yeah</span></p><p begin=\"10.787\" end=\"13.441\" lrc:key=\"L5\" ttm:agent=\"v1\"><span begin=\"10.787\" end=\"11.479\">Sha</span><span begin=\"11.479\" end=\"13.441\">yo!</span></p><p begin=\"13.859\" end=\"15.783\" lrc:key=\"L6\" ttm:agent=\"v1\"><span begin=\"13.859\" end=\"15.783\">Igbo!</span></p></div><div begin=\"16.587\" end=\"47.086\" lrc:songPart=\"Verse\"><p begin=\"16.587\" end=\"18.443\" lrc:key=\"L7\" ttm:agent=\"v1\"><span begin=\"16.587\" end=\"16.795\">You</span> <span begin=\"16.795\" end=\"16.956\">go</span> <span begin=\"16.956\" end=\"17.275\">bow</span> <span begin=\"17.275\" end=\"17.456\">for</span> <span begin=\"17.456\" end=\"17.622\">the</span> <span begin=\"17.622\" end=\"18.148\">result</span> <span begin=\"18.148\" end=\"18.443\">o</span></p><p begin=\"19.045\" end=\"20.535\" lrc:key=\"L8\" ttm:agent=\"v1\"><span begin=\"19.045\" end=\"19.524\">Nothing</span> <span begin=\"19.524\" end=\"19.719\">to</span> <span begin=\"19.719\" end=\"20.219\">discuss</span> <span begin=\"20.219\" end=\"20.535\">o</span></p><p begin=\"20.591\" end=\"24.039\" lrc:key=\"L9\" ttm:agent=\"v1\"><span begin=\"20.591\" end=\"20.740\">'Cause</span> <span begin=\"20.740\" end=\"20.904\">I</span> <span begin=\"20.904\" end=\"21.075\">dey</span> <span begin=\"21.075\" end=\"21.418\">win</span> <span begin=\"21.418\" end=\"21.796\">by</span> <span begin=\"21.796\" end=\"22.311\">default,</span> <span begin=\"22.311\" end=\"22.499\">I'm</span> <span begin=\"22.499\" end=\"22.986\">without</span> <span begin=\"22.986\" end=\"23.330\">any</span> <span begin=\"23.330\" end=\"23.755\">doubt</span> <span begin=\"23.755\" end=\"24.039\">o</span></p><p begin=\"24.014\" end=\"25.988\" lrc:key=\"L10\" ttm:agent=\"v1\"><span begin=\"24.014\" end=\"24.466\">Omo</span> <span begin=\"24.466\" end=\"24.781\">me</span> <span begin=\"24.781\" end=\"24.948\">I</span> <span begin=\"24.948\" end=\"25.138\">be</span> <span begin=\"25.138\" end=\"25.725\">adult</span> <span begin=\"25.725\" end=\"25.988\">o</span></p><p begin=\"25.997\" end=\"29.895\" lrc:key=\"L11\" ttm:agent=\"v1\"><span begin=\"25.997\" end=\"26.097\">I</span> <span begin=\"26.097\" end=\"26.348\">no</span> <span begin=\"26.348\" end=\"26.538\">go</span> <span begin=\"26.538\" end=\"26.884\">fit</span> <span begin=\"26.884\" end=\"27.032\">take</span> <span begin=\"27.032\" end=\"27.273\">your—</span> <span ttm:role=\"x-bg\"><span begin=\"27.318\" end=\"27.502\">(I</span> <span begin=\"27.502\" end=\"27.722\">no</span> <span begin=\"27.722\" end=\"27.883\">go</span> <span begin=\"27.883\" end=\"28.225\">fit</span> <span begin=\"28.225\" end=\"28.418\">take</span> <span begin=\"28.418\" end=\"28.622\">your</span> <span begin=\"28.622\" end=\"29.089\">insult</span> <span begin=\"29.089\" end=\"29.895\">o!)</span></span></p><p begin=\"29.583\" end=\"31.405\" lrc:key=\"L12\" ttm:agent=\"v1\"><span begin=\"29.583\" end=\"30.055\">Omo</span> <span begin=\"30.055\" end=\"30.394\">mind</span> <span begin=\"30.394\" end=\"30.540\">as</span> <span begin=\"30.540\" end=\"30.682\">you</span> <span begin=\"30.682\" end=\"30.918\">dey</span> <span begin=\"30.918\" end=\"31.305\">talk</span> <span begin=\"31.305\" end=\"31.405\">o</span></p><p begin=\"31.473\" end=\"33.177\" lrc:key=\"L13\" ttm:agent=\"v1\"><span begin=\"31.473\" end=\"31.682\">I</span> <span begin=\"31.682\" end=\"31.877\">put</span> <span begin=\"31.877\" end=\"32.043\">my</span> <span begin=\"32.043\" end=\"32.364\">life</span> <span begin=\"32.364\" end=\"32.623\">into</span> <span begin=\"32.623\" end=\"32.837\">my</span> <span begin=\"32.837\" end=\"33.177\">job</span></p><p begin=\"33.185\" end=\"34.871\" lrc:key=\"L14\" ttm:agent=\"v1\"><span begin=\"33.185\" end=\"33.363\">And</span> <span begin=\"33.363\" end=\"33.509\">I</span> <span begin=\"33.509\" end=\"33.875\">know</span> <span begin=\"33.875\" end=\"34.009\">I'm</span> <span begin=\"34.009\" end=\"34.173\">in</span> <span begin=\"34.173\" end=\"34.871\">trouble</span></p><p begin=\"34.991\" end=\"38.281\" lrc:key=\"L15\" ttm:agent=\"v1\"><span begin=\"34.991\" end=\"35.235\">She</span> <span begin=\"35.235\" end=\"36.078\">manipulate</span> <span begin=\"36.078\" end=\"36.339\">my</span> <span begin=\"36.339\" end=\"36.793\">love</span> <span begin=\"36.793\" end=\"37.456\">o,</span> <span begin=\"37.456\" end=\"38.281\">hmm</span></p><p begin=\"38.152\" end=\"41.880\" lrc:key=\"L16\" ttm:agent=\"v1\"><span begin=\"38.152\" end=\"38.498\">I</span> <span begin=\"38.498\" end=\"38.882\">no</span> <span begin=\"38.882\" end=\"39.822\">holy</span> <span begin=\"39.822\" end=\"39.996\">and</span> <span begin=\"39.996\" end=\"40.157\">I</span> <span begin=\"40.157\" end=\"40.490\">no</span> <span begin=\"40.490\" end=\"41.180\">denge</span> <span begin=\"41.180\" end=\"41.880\">pose</span></p><p begin=\"41.893\" end=\"45.949\" lrc:key=\"L17\" ttm:agent=\"v1\"><span begin=\"41.893\" end=\"42.232\">Like</span> <span begin=\"42.232\" end=\"42.922\">baba</span> <span begin=\"42.922\" end=\"43.937\">frio,</span> <span begin=\"43.937\" end=\"44.283\">my</span> <span begin=\"44.283\" end=\"44.710\">eye</span> <span begin=\"44.710\" end=\"45.949\">o</span></p><p begin=\"46.042\" end=\"47.086\" lrc:key=\"L18\" ttm:agent=\"v1\"><span begin=\"46.042\" end=\"46.363\">Don</span> <span begin=\"46.363\" end=\"46.780\">cry</span> <span begin=\"46.780\" end=\"47.086\">o</span></p></div><div begin=\"47.155\" end=\"1:11.726\" lrc:songPart=\"Chorus\"><p begin=\"47.155\" end=\"49.781\" lrc:key=\"L19\" ttm:agent=\"v1\"><span begin=\"47.155\" end=\"47.429\">I</span> <span begin=\"47.429\" end=\"47.696\">need</span> <span begin=\"47.696\" end=\"48.166\">igbo</span> <span begin=\"48.166\" end=\"48.315\">and</span> <span begin=\"48.315\" end=\"49.090\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"49.053\" end=\"49.781\">(Shayo)</span></span></p><p begin=\"49.757\" end=\"52.429\" lrc:key=\"L20\" ttm:agent=\"v1\"><span begin=\"49.757\" end=\"50.049\">I</span> <span begin=\"50.049\" end=\"50.286\">need</span> <span begin=\"50.286\" end=\"50.780\">igbo</span> <span begin=\"50.780\" end=\"51.048\">and</span> <span begin=\"51.048\" end=\"51.785\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"51.714\" end=\"52.429\">(Shayo)</span></span></p><p begin=\"52.509\" end=\"55.122\" lrc:key=\"L21\" ttm:agent=\"v1\"><span begin=\"52.509\" end=\"52.806\">I</span> <span begin=\"52.806\" end=\"53.036\">need</span> <span begin=\"53.036\" end=\"53.568\">igbo</span> <span begin=\"53.568\" end=\"53.842\">and</span> <span begin=\"53.842\" end=\"54.545\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"54.530\" end=\"55.122\">(Shayo)</span></span></p><p begin=\"55.176\" end=\"57.964\" lrc:key=\"L22\" ttm:agent=\"v1\"><span begin=\"55.176\" end=\"55.537\">I</span> <span begin=\"55.537\" end=\"55.854\">need</span> <span begin=\"55.854\" end=\"56.360\">igbo</span> <span begin=\"56.360\" end=\"56.580\">and</span> <span begin=\"56.580\" end=\"57.211\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"57.255\" end=\"57.964\">(Shayo)</span></span></p><p begin=\"57.797\" end=\"1:00.743\" lrc:key=\"L23\" ttm:agent=\"v1\"><span begin=\"57.797\" end=\"58.624\">Shayo,</span> <span begin=\"59.322\" end=\"1:00.015\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"58.615\" end=\"59.360\">(Shayo,</span> <span begin=\"59.988\" end=\"1:00.743\">shayo)</span></span></p><p begin=\"1:00.649\" end=\"1:03.491\" lrc:key=\"L24\" ttm:agent=\"v1\"><span begin=\"1:00.649\" end=\"1:01.012\">I</span> <span begin=\"1:01.012\" end=\"1:01.268\">need</span> <span begin=\"1:01.268\" end=\"1:01.446\">igbo</span> <span begin=\"1:01.446\" end=\"1:02.095\">and</span> <span begin=\"1:02.095\" end=\"1:02.734\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"1:02.696\" end=\"1:03.491\">(Shayo)</span></span></p><p begin=\"1:03.560\" end=\"1:06.216\" lrc:key=\"L25\" ttm:agent=\"v1\"><span begin=\"1:03.560\" end=\"1:03.708\">I</span> <span begin=\"1:03.708\" end=\"1:03.876\">need</span> <span begin=\"1:03.876\" end=\"1:04.381\">igbo</span> <span begin=\"1:04.381\" end=\"1:04.703\">and</span> <span begin=\"1:04.703\" end=\"1:05.578\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"1:05.440\" end=\"1:06.216\">(Shayo)</span></span></p><p begin=\"1:06.106\" end=\"1:08.918\" lrc:key=\"L26\" ttm:agent=\"v1\"><span begin=\"1:06.106\" end=\"1:06.392\">I</span> <span begin=\"1:06.392\" end=\"1:06.641\">need</span> <span begin=\"1:06.641\" end=\"1:07.147\">igbo</span> <span begin=\"1:07.147\" end=\"1:07.349\">and</span> <span begin=\"1:07.349\" end=\"1:08.101\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"1:08.131\" end=\"1:08.918\">(Shayo)</span></span></p><p begin=\"1:08.860\" end=\"1:11.726\" lrc:key=\"L27\" ttm:agent=\"v1\"><span begin=\"1:08.860\" end=\"1:09.632\">Shayo,</span> <span begin=\"1:10.144\" end=\"1:11.053\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"1:09.568\" end=\"1:10.344\">(Shayo,</span> <span begin=\"1:11.002\" end=\"1:11.726\">shayo)</span></span></p></div><div begin=\"1:11.643\" end=\"1:32.189\" lrc:songPart=\"Verse\"><p begin=\"1:11.643\" end=\"1:13.906\" lrc:key=\"L28\" ttm:agent=\"v1\"><span begin=\"1:11.643\" end=\"1:11.873\">I</span> <span begin=\"1:11.873\" end=\"1:12.063\">dey</span> <span begin=\"1:12.063\" end=\"1:12.561\">Port-Harcourt</span> <span begin=\"1:12.561\" end=\"1:12.708\">when</span> <span begin=\"1:12.708\" end=\"1:12.953\">them</span> <span begin=\"1:12.953\" end=\"1:13.178\">kill</span> <span begin=\"1:13.178\" end=\"1:13.906\">Soboma</span></p><p begin=\"1:14.042\" end=\"1:16.689\" lrc:key=\"L29\" ttm:agent=\"v1\"><span begin=\"1:14.042\" end=\"1:14.142\">I</span> <span begin=\"1:14.142\" end=\"1:14.268\">dey</span> <span begin=\"1:14.268\" end=\"1:14.441\">try</span> <span begin=\"1:14.441\" end=\"1:14.607\">to</span> <span begin=\"1:14.607\" end=\"1:14.804\">buy</span> <span begin=\"1:14.804\" end=\"1:15.339\">motor,</span> <span begin=\"1:15.339\" end=\"1:15.494\">one</span> <span begin=\"1:15.494\" end=\"1:15.984\">Toyota</span> <span begin=\"1:15.984\" end=\"1:16.689\">Corolla</span></p><p begin=\"1:16.773\" end=\"1:19.433\" lrc:key=\"L30\" ttm:agent=\"v1\"><span begin=\"1:16.773\" end=\"1:16.977\">My</span> <span begin=\"1:16.977\" end=\"1:17.364\">feelings</span> <span begin=\"1:17.364\" end=\"1:17.550\">been</span> <span begin=\"1:17.550\" end=\"1:17.687\">dey</span> <span begin=\"1:17.687\" end=\"1:18.081\">swing</span> <span begin=\"1:18.081\" end=\"1:18.465\">like</span> <span begin=\"1:18.465\" end=\"1:19.433\">Jangolover</span></p><p begin=\"1:19.603\" end=\"1:22.122\" lrc:key=\"L31\" ttm:agent=\"v1\"><span begin=\"1:19.603\" end=\"1:20.140\">Feelings</span> <span begin=\"1:20.140\" end=\"1:20.321\">been</span> <span begin=\"1:20.321\" end=\"1:20.464\">dey</span> <span begin=\"1:20.464\" end=\"1:20.773\">swing</span> <span begin=\"1:20.773\" end=\"1:21.138\">like</span> <span begin=\"1:21.138\" end=\"1:22.122\">Jangolover</span></p><p begin=\"1:22.104\" end=\"1:24.920\" lrc:key=\"L32\" ttm:agent=\"v1\"><span begin=\"1:22.104\" end=\"1:22.455\">Now</span> <span begin=\"1:22.455\" end=\"1:22.616\">you</span> <span begin=\"1:22.616\" end=\"1:22.818\">crash</span> <span begin=\"1:22.818\" end=\"1:22.961\">your</span> <span begin=\"1:22.961\" end=\"1:23.669\">Ferrari</span> <span begin=\"1:23.669\" end=\"1:23.895\">for</span> <span begin=\"1:23.895\" end=\"1:24.371\">lekki</span> <span begin=\"1:24.371\" end=\"1:24.920\">Burna</span></p><p begin=\"1:24.930\" end=\"1:27.657\" lrc:key=\"L33\" ttm:agent=\"v1\"><span begin=\"1:24.930\" end=\"1:25.180\">Na</span> <span begin=\"1:25.180\" end=\"1:25.522\">small</span> <span begin=\"1:25.522\" end=\"1:25.707\">thing</span> <span begin=\"1:25.707\" end=\"1:26.243\">remain</span> <span begin=\"1:26.243\" end=\"1:26.433\">could</span> <span begin=\"1:26.433\" end=\"1:26.683\">have</span> <span begin=\"1:26.683\" end=\"1:26.960\">been</span> <span begin=\"1:26.960\" end=\"1:27.139\">all</span> <span begin=\"1:27.139\" end=\"1:27.657\">over</span></p><p begin=\"1:27.827\" end=\"1:30.485\" lrc:key=\"L34\" ttm:agent=\"v1\"><span begin=\"1:27.827\" end=\"1:28.016\">My</span> <span begin=\"1:28.016\" end=\"1:28.385\">feelings</span> <span begin=\"1:28.385\" end=\"1:28.527\">took</span> <span begin=\"1:28.527\" end=\"1:28.665\">a</span> <span begin=\"1:28.665\" end=\"1:28.992\">swing</span> <span begin=\"1:28.992\" end=\"1:29.331\">like</span> <span begin=\"1:29.331\" end=\"1:30.485\">Jangolover</span></p><p begin=\"1:30.603\" end=\"1:32.189\" lrc:key=\"L35\" ttm:agent=\"v1\"><span begin=\"1:30.603\" end=\"1:30.968\">Feelings</span> <span begin=\"1:30.968\" end=\"1:31.153\">took</span> <span begin=\"1:31.153\" end=\"1:31.278\">a</span> <span begin=\"1:31.278\" end=\"1:31.671\">swing</span> <span begin=\"1:31.671\" end=\"1:32.189\">like—</span></p></div><div begin=\"1:32.344\" end=\"1:54.081\" lrc:songPart=\"Verse\"><p begin=\"1:32.344\" end=\"1:34.748\" lrc:key=\"L36\" ttm:agent=\"v1\"><span begin=\"1:32.344\" end=\"1:32.475\">Ti</span> <span begin=\"1:32.475\" end=\"1:32.575\">n</span> <span begin=\"1:32.575\" end=\"1:32.816\">ba</span> <span begin=\"1:32.816\" end=\"1:33.090\">ni</span> <span begin=\"1:33.090\" end=\"1:33.449\">ke</span> <span begin=\"1:33.449\" end=\"1:33.933\">juru</span> <span begin=\"1:33.933\" end=\"1:34.143\">e</span> <span begin=\"1:34.143\" end=\"1:34.748\">juru</span></p><p begin=\"1:35.022\" end=\"1:37.531\" lrc:key=\"L37\" ttm:agent=\"v1\"><span begin=\"1:35.022\" end=\"1:35.481\">Omo</span> <span begin=\"1:35.481\" end=\"1:35.795\">why</span> <span begin=\"1:35.795\" end=\"1:36.184\">to'o</span> <span begin=\"1:36.184\" end=\"1:36.284\">ki</span> <span begin=\"1:36.284\" end=\"1:36.536\">nfe</span> <span begin=\"1:36.536\" end=\"1:36.703\">ni</span> <span begin=\"1:36.703\" end=\"1:37.531\">suru</span></p><p begin=\"1:37.695\" end=\"1:39.833\" lrc:key=\"L38\" ttm:agent=\"v1\"><span begin=\"1:37.695\" end=\"1:37.917\">Why</span> <span begin=\"1:37.917\" end=\"1:38.048\">you</span> <span begin=\"1:38.048\" end=\"1:38.244\">say</span> <span begin=\"1:38.244\" end=\"1:38.434\">I</span> <span begin=\"1:38.434\" end=\"1:38.773\">did</span> <span begin=\"1:38.773\" end=\"1:39.250\">nothing</span> <span begin=\"1:39.250\" end=\"1:39.499\">for</span> <span begin=\"1:39.499\" end=\"1:39.833\">you?</span></p><p begin=\"1:39.833\" end=\"1:43.133\" lrc:key=\"L39\" ttm:agent=\"v1\"><span begin=\"1:39.833\" end=\"1:40.204\">When</span> <span begin=\"1:40.204\" end=\"1:40.321\">I</span> <span begin=\"1:40.321\" end=\"1:40.572\">for</span> <span begin=\"1:40.572\" end=\"1:40.841\">do</span> <span begin=\"1:40.841\" end=\"1:41.356\">anything</span> <span begin=\"1:41.356\" end=\"1:41.567\">you</span> <span begin=\"1:41.567\" end=\"1:42.101\">want</span> <span begin=\"1:42.101\" end=\"1:42.379\">me</span> <span begin=\"1:42.379\" end=\"1:42.707\">to</span> <span begin=\"1:42.707\" end=\"1:43.133\">do</span></p><p begin=\"1:43.140\" end=\"1:45.682\" lrc:key=\"L40\" ttm:agent=\"v1\"><span begin=\"1:43.140\" end=\"1:43.539\">Ti</span> <span begin=\"1:43.539\" end=\"1:43.639\">n</span> <span begin=\"1:43.639\" end=\"1:43.830\">ba</span> <span begin=\"1:43.830\" end=\"1:44.104\">ni</span> <span begin=\"1:44.104\" end=\"1:44.479\">ke</span> <span begin=\"1:44.479\" end=\"1:44.776\">juru</span> <span begin=\"1:44.776\" end=\"1:44.978\">e</span> <span begin=\"1:44.978\" end=\"1:45.682\">juru</span></p><p begin=\"1:46.009\" end=\"1:48.459\" lrc:key=\"L41\" ttm:agent=\"v1\"><span begin=\"1:46.009\" end=\"1:46.330\">Omo</span> <span begin=\"1:46.330\" end=\"1:46.652\">why</span> <span begin=\"1:46.652\" end=\"1:46.901\">to'o</span> <span begin=\"1:46.901\" end=\"1:47.062\">ki</span> <span begin=\"1:47.062\" end=\"1:47.538\">nfe</span> <span begin=\"1:47.538\" end=\"1:47.663\">ni</span> <span begin=\"1:47.663\" end=\"1:48.459\">suru</span></p><p begin=\"1:48.751\" end=\"1:50.831\" lrc:key=\"L42\" ttm:agent=\"v1\"><span begin=\"1:48.751\" end=\"1:48.896\">Why</span> <span begin=\"1:48.896\" end=\"1:49.061\">you</span> <span begin=\"1:49.061\" end=\"1:49.248\">say</span> <span begin=\"1:49.248\" end=\"1:49.391\">I</span> <span begin=\"1:49.391\" end=\"1:49.811\">did</span> <span begin=\"1:49.811\" end=\"1:50.304\">nothing</span> <span begin=\"1:50.304\" end=\"1:50.602\">for</span> <span begin=\"1:50.602\" end=\"1:50.831\">you?</span></p><p begin=\"1:50.831\" end=\"1:54.081\" lrc:key=\"L43\" ttm:agent=\"v1\"><span begin=\"1:50.831\" end=\"1:51.137\">When</span> <span begin=\"1:51.137\" end=\"1:51.263\">I</span> <span begin=\"1:51.263\" end=\"1:51.502\">for</span> <span begin=\"1:51.502\" end=\"1:51.805\">do</span> <span begin=\"1:51.805\" end=\"1:52.286\">anything</span> <span begin=\"1:52.286\" end=\"1:52.543\">you</span> <span begin=\"1:52.543\" end=\"1:52.931\">want</span> <span begin=\"1:52.931\" end=\"1:53.163\">me</span> <span begin=\"1:53.163\" end=\"1:53.502\">to</span> <span begin=\"1:53.502\" end=\"1:54.081\">do</span></p></div><div begin=\"1:54.087\" end=\"2:14.345\" lrc:songPart=\"Bridge\"><p begin=\"1:54.087\" end=\"1:55.509\" lrc:key=\"L44\" ttm:agent=\"v1\"><span begin=\"1:54.087\" end=\"1:54.451\">Maybe</span> <span begin=\"1:54.451\" end=\"1:54.943\">another</span> <span begin=\"1:54.943\" end=\"1:55.509\">time</span></p><p begin=\"1:55.520\" end=\"2:00.260\" lrc:key=\"L45\" ttm:agent=\"v1\"><span begin=\"1:55.520\" end=\"1:55.877\">Maybe</span> <span begin=\"1:55.877\" end=\"1:56.573\">another</span> <span begin=\"1:56.573\" end=\"1:57.293\">life</span> <span begin=\"1:57.293\" end=\"1:57.907\">you'll</span> <span begin=\"1:57.907\" end=\"1:58.065\">be</span> <span begin=\"1:58.065\" end=\"1:58.243\">my</span> <span begin=\"1:58.243\" end=\"1:58.618\">wife</span> <span begin=\"1:58.618\" end=\"1:58.782\">and</span> <span begin=\"1:58.782\" end=\"1:58.947\">we'll</span> <span begin=\"1:58.947\" end=\"1:59.103\">get</span> <span begin=\"1:59.103\" end=\"1:59.250\">it</span> <span begin=\"1:59.250\" end=\"2:00.260\">right</span></p><p begin=\"2:00.273\" end=\"2:01.382\" lrc:key=\"L46\" ttm:agent=\"v1\"><span begin=\"2:00.273\" end=\"2:00.404\">E</span> <span begin=\"2:00.404\" end=\"2:00.565\">don</span> <span begin=\"2:00.565\" end=\"2:01.382\">cast</span></p><p begin=\"2:01.608\" end=\"2:02.851\" lrc:key=\"L47\" ttm:agent=\"v1\"><span begin=\"2:01.608\" end=\"2:01.961\">Last</span> <span begin=\"2:01.961\" end=\"2:02.851\">last</span></p><p begin=\"2:03.006\" end=\"2:05.185\" lrc:key=\"L48\" ttm:agent=\"v1\"><span begin=\"2:03.006\" end=\"2:03.197\">Na</span> <span begin=\"2:03.197\" end=\"2:03.835\">everybody</span> <span begin=\"2:03.835\" end=\"2:04.017\">go</span> <span begin=\"2:04.017\" end=\"2:04.351\">chop</span> <span begin=\"2:04.351\" end=\"2:04.639\">break</span><span begin=\"2:04.639\" end=\"2:05.185\">fast</span></p><p begin=\"2:05.181\" end=\"2:07.832\" lrc:key=\"L49\" ttm:agent=\"v1\"><span begin=\"2:05.181\" end=\"2:05.336\">Have</span> <span begin=\"2:05.336\" end=\"2:05.461\">to</span> <span begin=\"2:05.461\" end=\"2:05.816\">say</span> <span begin=\"2:05.816\" end=\"2:06.105\">bye,</span> <span begin=\"2:06.105\" end=\"2:06.439\">bye</span> <span begin=\"2:06.439\" end=\"2:07.832\">o</span></p><p begin=\"2:07.929\" end=\"2:09.027\" lrc:key=\"L50\" ttm:agent=\"v1\"><span begin=\"2:07.929\" end=\"2:08.206\">Bye,</span> <span begin=\"2:08.206\" end=\"2:08.523\">bye</span> <span begin=\"2:08.523\" end=\"2:09.027\">o</span></p><p begin=\"2:09.296\" end=\"2:11.096\" lrc:key=\"L51\" ttm:agent=\"v1\"><span begin=\"2:09.296\" end=\"2:09.510\">To</span> <span begin=\"2:09.510\" end=\"2:09.610\">the</span> <span begin=\"2:09.610\" end=\"2:09.903\">love</span> <span begin=\"2:09.903\" end=\"2:10.260\">of</span> <span begin=\"2:10.260\" end=\"2:10.533\">my</span> <span begin=\"2:10.533\" end=\"2:11.096\">life</span></p><p begin=\"2:11.107\" end=\"2:14.345\" lrc:key=\"L52\" ttm:agent=\"v1\"><span begin=\"2:11.107\" end=\"2:11.512\">My</span> <span begin=\"2:11.512\" end=\"2:11.959\">eye</span> <span begin=\"2:11.959\" end=\"2:13.332\">o,</span> <span begin=\"2:13.332\" end=\"2:13.499\">don</span> <span begin=\"2:13.499\" end=\"2:14.016\">cry</span> <span begin=\"2:14.016\" end=\"2:14.345\">o</span></p></div><div begin=\"2:14.525\" end=\"2:39.023\" lrc:songPart=\"Chorus\"><p begin=\"2:14.525\" end=\"2:18.753\" lrc:key=\"L53\" ttm:agent=\"v1\"><span begin=\"2:14.525\" end=\"2:14.650\">I</span> <span begin=\"2:14.650\" end=\"2:14.924\">need</span> <span begin=\"2:14.924\" end=\"2:15.369\">igbo</span> <span begin=\"2:15.369\" end=\"2:15.645\">and</span> <span begin=\"2:15.645\" end=\"2:16.555\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"2:16.175\" end=\"2:16.983\">(Sha</span><span begin=\"2:16.983\" end=\"2:18.753\">yo)</span></span></p><p begin=\"2:17.195\" end=\"2:19.815\" lrc:key=\"L54\" ttm:agent=\"v1\"><span begin=\"2:17.195\" end=\"2:17.338\">I</span> <span begin=\"2:17.338\" end=\"2:17.522\">need</span> <span begin=\"2:17.522\" end=\"2:18.016\">igbo</span> <span begin=\"2:18.016\" end=\"2:18.290\">and</span> <span begin=\"2:18.290\" end=\"2:19.670\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"2:19.013\" end=\"2:19.815\">(Shayo)</span></span></p><p begin=\"2:19.802\" end=\"2:24.376\" lrc:key=\"L55\" ttm:agent=\"v1\"><span begin=\"2:19.802\" end=\"2:20.091\">I</span> <span begin=\"2:20.091\" end=\"2:20.323\">need</span> <span begin=\"2:20.323\" end=\"2:20.810\">igbo</span> <span begin=\"2:20.810\" end=\"2:21.036\">and</span> <span begin=\"2:21.036\" end=\"2:21.861\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"2:21.802\" end=\"2:22.594\">(Sha</span><span begin=\"2:22.594\" end=\"2:24.376\">yo)</span></span></p><p begin=\"2:22.625\" end=\"2:25.323\" lrc:key=\"L56\" ttm:agent=\"v1\"><span begin=\"2:22.625\" end=\"2:22.839\">I</span> <span begin=\"2:22.839\" end=\"2:23.119\">need</span> <span begin=\"2:23.119\" end=\"2:23.619\">igbo</span> <span begin=\"2:23.619\" end=\"2:23.880\">and</span> <span begin=\"2:23.880\" end=\"2:24.650\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"2:24.594\" end=\"2:25.323\">(Shayo)</span></span></p><p begin=\"2:25.110\" end=\"2:29.917\" lrc:key=\"L57\" ttm:agent=\"v1\"><span begin=\"2:25.110\" end=\"2:26.041\">Shayo,</span> <span begin=\"2:26.527\" end=\"2:27.349\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"2:25.916\" end=\"2:26.779\">(Shayo,</span> <span begin=\"2:27.184\" end=\"2:27.917\">sha</span><span begin=\"2:27.917\" end=\"2:29.917\">yo)</span></span></p><p begin=\"2:28.103\" end=\"2:30.768\" lrc:key=\"L58\" ttm:agent=\"v1\"><span begin=\"2:28.103\" end=\"2:28.293\">I</span> <span begin=\"2:28.293\" end=\"2:28.514\">need</span> <span begin=\"2:28.514\" end=\"2:29.001\">igbo</span> <span begin=\"2:29.001\" end=\"2:29.269\">and</span> <span begin=\"2:29.269\" end=\"2:30.035\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"2:29.949\" end=\"2:30.768\">(Shayo)</span></span></p><p begin=\"2:30.656\" end=\"2:35.256\" lrc:key=\"L59\" ttm:agent=\"v1\"><span begin=\"2:30.656\" end=\"2:30.912\">I</span> <span begin=\"2:30.912\" end=\"2:31.210\">need</span> <span begin=\"2:31.210\" end=\"2:31.654\">igbo</span> <span begin=\"2:31.654\" end=\"2:31.969\">and</span> <span begin=\"2:31.969\" end=\"2:32.636\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"2:32.634\" end=\"2:33.218\">(Sha</span><span begin=\"2:33.218\" end=\"2:35.256\">yo)</span></span></p><p begin=\"2:33.514\" end=\"2:35.993\" lrc:key=\"L60\" ttm:agent=\"v1\"><span begin=\"2:33.514\" end=\"2:33.621\">I</span> <span begin=\"2:33.621\" end=\"2:33.901\">need</span> <span begin=\"2:33.901\" end=\"2:34.389\">igbo</span> <span begin=\"2:34.389\" end=\"2:34.899\">and</span> <span begin=\"2:34.899\" end=\"2:35.602\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"2:35.519\" end=\"2:35.993\">(Shayo)</span></span></p><p begin=\"2:35.993\" end=\"2:39.023\" lrc:key=\"L61\" ttm:agent=\"v1\"><span begin=\"2:35.993\" end=\"2:36.807\">Shayo,</span> <span begin=\"2:37.543\" end=\"2:38.391\">shayo</span> <span ttm:role=\"x-bg\"><span begin=\"2:36.741\" end=\"2:37.660\">(Shayo,</span> <span begin=\"2:38.163\" end=\"2:39.023\">shayo)</span></span></p></div></body></tt>",
+  "title": "Last Last",
+  "year": 2022
+}

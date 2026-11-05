@@ -88,7 +88,7 @@ object SpotiwoopApi {
     private val base = BuildConfig.ONLINE_RESOLVE_URL.removeSuffix("/").removeSuffix("/resolve")
 
     suspend fun discover(genre: String, country: String = "BJ"): DiscoverData {
-        val o = get("discover", "genre" to genre, "country" to country)
+        val o = getOrCached("discover", "genre" to genre, "country" to country)
         return DiscoverData(
             trendingSongs = tracks(o.optJSONArray("trendingSongs")),
             top = tracks(o.optJSONArray("top")),
@@ -100,12 +100,12 @@ object SpotiwoopApi {
     /** Titres d'un album ou d'une playlist ; [ref] vaut "sp:<id>" ou "am:<…>". */
     suspend fun collectionTracks(kind: String, ref: String): List<TrackResult> {
         val route = if (kind == "album") "album" else "playlist"
-        return tracks(get(route, "ref" to ref).optJSONArray("tracks")).map { it.track }
+        return tracks(getOrCached(route, "ref" to ref).optJSONArray("tracks")).map { it.track }
     }
 
     /** Fiche artiste ; [ref] vaut "sp:<id>" ou "name:<nom>". */
     suspend fun artist(ref: String): ArtistPage {
-        val o = get("artist", "ref" to ref)
+        val o = getOrCached("artist", "ref" to ref)
         val cities = o.optJSONArray("topCities")
         val links = o.optJSONArray("links")
         return ArtistPage(
@@ -129,7 +129,7 @@ object SpotiwoopApi {
 
     /** Album ou playlist complet ; [ref] vaut "sp:<id>" ou "am:<…>". */
     suspend fun collection(kind: String, ref: String): CollectionPage {
-        val o = get(if (kind == "album") "album" else "playlist", "ref" to ref)
+        val o = getOrCached(if (kind == "album") "album" else "playlist", "ref" to ref)
         return CollectionPage(
             kind = kind,
             ref = o.optString("ref").ifBlank { ref },
@@ -150,7 +150,7 @@ object SpotiwoopApi {
 
     /** Référence d'un album connu seulement par son nom (menu ⋮ d'un titre) : premier album du même artiste. */
     suspend fun findAlbumRef(album: String, artist: String): String? {
-        val albums = cards(get("search", "q" to "$album $artist".trim()).optJSONArray("albums"))
+        val albums = cards(getOrCached("search", "q" to "$album $artist".trim()).optJSONArray("albums"))
         val main = artist.substringBefore(",").trim()
         return (albums.firstOrNull { it.title.equals(album, true) && it.subtitle.orEmpty().contains(main, true) }
             ?: albums.firstOrNull { it.title.equals(album, true) }
@@ -197,6 +197,18 @@ object SpotiwoopApi {
     }
 
     private class NotFound : IOException("introuvable")
+
+    /** Réseau d'abord ; sans réseau, dernière réponse enregistrée sur le téléphone. */
+    private suspend fun getOrCached(route: String, vararg params: Pair<String, String>): JSONObject = withContext(Dispatchers.IO) {
+        val key = "$route?" + params.joinToString("&") { "${it.first}=${it.second}" }
+        try {
+            get(route, *params).also { OfflineCache.write(key, it.toString()) }
+        } catch (e: NotFound) {
+            throw e
+        } catch (e: IOException) {
+            OfflineCache.read(key)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: throw e
+        }
+    }
 
     private suspend fun get(route: String, vararg params: Pair<String, String>): JSONObject = withContext(Dispatchers.IO) {
         val url = "$base/$route".toHttpUrl().newBuilder()

@@ -33,6 +33,11 @@ object LyricsClient {
         withContext(Dispatchers.IO) {
             val cacheKey = "$artist - $title"
             if (cache.containsKey(cacheKey)) return@withContext cache[cacheKey]
+            val diskKey = "lyrics-lines:${cacheKey.lowercase()}"
+            OfflineCache.read(diskKey)?.let { decode(it) }?.let {
+                cache[cacheKey] = it
+                return@withContext it
+            }
             val started = System.currentTimeMillis()
 
             // 0. API du site : une requête, réponse souvent déjà en cache. Si elle ne répond pas, on
@@ -42,7 +47,10 @@ object LyricsClient {
             }
             if (viaApi.isSuccess) {
                 val r = viaApi.getOrNull()
-                if (r != null) cache[cacheKey] = r
+                if (r != null) {
+                    cache[cacheKey] = r
+                    OfflineCache.write(diskKey, encode(r))
+                }
                 android.util.Log.i("Lyrics", "API '$artist - $title' (${durationSec}s) : ${r?.lines?.size ?: "aucune"} en ${System.currentTimeMillis() - started} ms")
                 return@withContext r
             }
@@ -77,10 +85,22 @@ object LyricsClient {
 
             if (result != null) {
                 cache[cacheKey] = result
+                OfflineCache.write(diskKey, encode(result))
             }
             android.util.Log.i("Lyrics", "'$artist - $cleanTitle' (${durationSec}s) : ${if (result == null) "aucune" else "${result.lines.size} lignes"} en ${System.currentTimeMillis() - started} ms")
             result
         }
+
+    private fun encode(r: LyricsResult): String = JSONObject()
+        .put("synced", r.isSynced)
+        .put("lines", org.json.JSONArray(r.lines.map { JSONObject().put("t", it.timeMs).put("text", it.text) }))
+        .toString()
+
+    private fun decode(text: String): LyricsResult? = runCatching {
+        val o = JSONObject(text)
+        val a = o.getJSONArray("lines")
+        LyricsResult((0 until a.length()).map { a.getJSONObject(it).let { l -> LyricLine(l.optLong("t"), l.optString("text")) } }, o.optBoolean("synced"))
+    }.getOrNull()
 
     private fun queryLrclib(artist: String, title: String, album: String?, durationSec: Long): LyricsResult? {
         val urlBuilder = StringBuilder("https://lrclib.net/api/get")

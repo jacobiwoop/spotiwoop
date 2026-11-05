@@ -3,6 +3,7 @@ package com.spotywoop.kt.ui
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,9 +19,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,38 +30,82 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.spotywoop.kt.data.LyricsResult
+import com.spotywoop.kt.lyrics.LyricsLine
+import com.spotywoop.kt.lyrics.LyricsRepository
+import com.spotywoop.kt.lyrics.LyricsState
+import com.spotywoop.kt.lyrics.Syllable
+import com.spotywoop.kt.lyrics.ui.AmLyricsView
+import com.spotywoop.kt.lyrics.ui.rememberPlaybackClock
 import com.spotywoop.kt.ui.theme.SpotyColors
+import kotlinx.coroutines.launch
 
 /**
- * Carte d'aperçu des paroles intégrée dans le défilement du lecteur (style Spotify Mobile).
+ * Convertit les paroles ligne par ligne rapides de [LyricsResult] en modèle complet [LyricsLine].
+ */
+fun LyricsResult.toLyricsLines(): List<LyricsLine> {
+    return lines.mapIndexed { index, lyricLine ->
+        val nextTime = lines.getOrNull(index + 1)?.timeMs ?: (lyricLine.timeMs + 4000L)
+        LyricsLine(
+            text = listOf(
+                Syllable(
+                    text = lyricLine.text,
+                    part = false,
+                    timestamp = lyricLine.timeMs,
+                    endtime = nextTime,
+                    lineSynced = true,
+                ),
+            ),
+            timestamp = lyricLine.timeMs,
+            endtime = nextTime,
+            isWordSynced = false,
+        )
+    }
+}
+
+/**
+ * Carte d'aperçu des paroles intégrée dans le défilement du lecteur (style Spotify Mobile),
+ * animée avec l'horloge fluide et le surlignage mot par mot.
  */
 @Composable
 fun LyricsCard(
-    lyrics: LyricsResult?,
-    loading: Boolean,
-    currentPositionMs: Long,
-    dominantColor: Color,
-    onSeek: (Long) -> Unit,
-    onOpenFullScreen: () -> Unit,
+    lyrics: LyricsResult? = null,
+    richLyrics: LyricsState = LyricsState(),
+    loading: Boolean = false,
+    currentPositionMs: Long = 0L,
+    isPlaying: Boolean = false,
+    dominantColor: Color = Color(0xFF1E1E1E),
+    onSeek: (Long) -> Unit = {},
+    onOpenFullScreen: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val cardColor = remember(dominantColor) {
         dominantColor.copy(alpha = 0.95f)
     }
+
+    val coroutineScope = rememberCoroutineScope()
+    val clock = rememberPlaybackClock(positionMs = currentPositionMs, isPlaying = isPlaying)
+
+    // Priorité aux paroles riches de la cascade, avec repli immédiat sur l'API rapide du site
+    val effectiveLines = remember(richLyrics.lyrics, lyrics) {
+        when {
+            !richLyrics.lyrics.isNullOrEmpty() -> richLyrics.lyrics
+            lyrics != null && lyrics.lines.isNotEmpty() -> lyrics.toLyricsLines()
+            else -> null
+        }
+    }
+
+    val isLoading = loading && effectiveLines == null
 
     Box(
         modifier = modifier
@@ -104,7 +146,7 @@ fun LyricsCard(
             Spacer(Modifier.height(16.dp))
 
             when {
-                loading -> {
+                isLoading -> {
                     Box(
                         Modifier
                             .fillMaxWidth()
@@ -118,7 +160,7 @@ fun LyricsCard(
                         )
                     }
                 }
-                lyrics == null || lyrics.lines.isEmpty() -> {
+                effectiveLines.isNullOrEmpty() -> {
                     Box(
                         Modifier
                             .fillMaxWidth()
@@ -133,53 +175,29 @@ fun LyricsCard(
                     }
                 }
                 else -> {
-                    val activeIndex by remember(lyrics, currentPositionMs) {
-                        derivedStateOf {
-                            if (!lyrics.isSynced) -1
-                            else lyrics.lines.indexOfLast { it.timeMs <= currentPositionMs }
-                        }
-                    }
-
-                    val listState = rememberLazyListState()
-
-                    LaunchedEffect(activeIndex) {
-                        if (activeIndex in lyrics.lines.indices) {
-                            listState.animateScrollToItem(
-                                index = (activeIndex - 1).coerceAtLeast(0),
-                            )
-                        }
-                    }
-
-                    LazyColumn(
-                        state = listState,
+                    // Aperçu avec défilement et surlignage mot par mot
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(max = 220.dp),
                     ) {
-                        itemsIndexed(lyrics.lines) { index, line ->
-                            val isActive = index == activeIndex
-                            val textColor = when {
-                                !lyrics.isSynced -> Color.White.copy(alpha = 0.9f)
-                                isActive -> Color.White
-                                else -> Color.White.copy(alpha = 0.45f)
-                            }
-                            val fontWeight = if (isActive || !lyrics.isSynced) FontWeight.Bold else FontWeight.SemiBold
-                            val fontSize = if (isActive) 20.sp else 18.sp
-
-                            Text(
-                                text = line.text.ifBlank { "♪" },
-                                color = textColor,
-                                fontSize = fontSize,
-                                fontWeight = fontWeight,
-                                textAlign = TextAlign.Start,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(enabled = lyrics.isSynced && line.timeMs > 0) {
-                                        onSeek(line.timeMs)
-                                    }
-                                    .padding(vertical = 8.dp),
-                            )
-                        }
+                        AmLyricsView(
+                            lyrics = effectiveLines,
+                            clock = clock,
+                            currentSource = richLyrics.currentSource,
+                            availableSources = richLyrics.availableSources,
+                            songwriters = richLyrics.songwriters,
+                            onSeek = { targetMs ->
+                                clock.seekTo(targetMs)
+                                onSeek(targetMs)
+                            },
+                            onSwitchSource = {
+                                coroutineScope.launch {
+                                    LyricsRepository.switchSource()
+                                }
+                            },
+                            showControlsHeader = false,
+                        )
                     }
 
                     Spacer(Modifier.height(16.dp))
@@ -205,28 +223,26 @@ fun LyricsCard(
 }
 
 /**
- * Vue plein écran des paroles synchronisées (Modal overlay style Spotify).
+ * Vue plein écran des paroles synchronisées (Overlay modal natif complet am-lyrics).
  */
 @Composable
 fun FullScreenLyricsDialog(
-    lyrics: LyricsResult?,
-    currentPositionMs: Long,
-    dominantColor: Color,
-    onClose: () -> Unit,
-    onSeek: (Long) -> Unit,
+    lyrics: LyricsResult? = null,
+    richLyrics: LyricsState = LyricsState(),
+    currentPositionMs: Long = 0L,
+    isPlaying: Boolean = false,
+    dominantColor: Color = Color(0xFF1E1E1E),
+    onClose: () -> Unit = {},
+    onSeek: (Long) -> Unit = {},
 ) {
-    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val clock = rememberPlaybackClock(positionMs = currentPositionMs, isPlaying = isPlaying)
 
-    val activeIndex by remember(lyrics, currentPositionMs) {
-        derivedStateOf {
-            if (lyrics == null || !lyrics.isSynced) -1
-            else lyrics.lines.indexOfLast { it.timeMs <= currentPositionMs }
-        }
-    }
-
-    LaunchedEffect(activeIndex) {
-        if (lyrics != null && activeIndex in lyrics.lines.indices) {
-            listState.animateScrollToItem((activeIndex - 2).coerceAtLeast(0))
+    val effectiveLines = remember(richLyrics.lyrics, lyrics) {
+        when {
+            !richLyrics.lyrics.isNullOrEmpty() -> richLyrics.lyrics
+            lyrics != null && lyrics.lines.isNotEmpty() -> lyrics.toLyricsLines()
+            else -> emptyList()
         }
     }
 
@@ -236,8 +252,8 @@ fun FullScreenLyricsDialog(
             .background(SpotyColors.Background)
             .background(
                 Brush.verticalGradient(
-                    listOf(dominantColor, dominantColor.copy(alpha = 0.9f), Color(0xFF121212))
-                )
+                    listOf(dominantColor, dominantColor.copy(alpha = 0.9f), Color(0xFF121212)),
+                ),
             )
             .statusBarsPadding()
             .navigationBarsPadding(),
@@ -245,15 +261,16 @@ fun FullScreenLyricsDialog(
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
+            // Barre supérieure avec bouton de fermeture
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Paroles",
+                    text = "Paroles",
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -275,37 +292,37 @@ fun FullScreenLyricsDialog(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
 
-            if (lyrics != null && lyrics.lines.isNotEmpty()) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    itemsIndexed(lyrics.lines) { index, line ->
-                        val isActive = index == activeIndex
-                        val textColor = when {
-                            !lyrics.isSynced -> Color.White.copy(alpha = 0.9f)
-                            isActive -> Color.White
-                            else -> Color.White.copy(alpha = 0.4f)
+            if (effectiveLines.isNotEmpty()) {
+                AmLyricsView(
+                    lyrics = effectiveLines,
+                    clock = clock,
+                    currentSource = richLyrics.currentSource,
+                    availableSources = richLyrics.availableSources,
+                    songwriters = richLyrics.songwriters,
+                    onSeek = { targetMs ->
+                        clock.seekTo(targetMs)
+                        onSeek(targetMs)
+                    },
+                    onSwitchSource = {
+                        coroutineScope.launch {
+                            LyricsRepository.switchSource()
                         }
-                        val fontWeight = if (isActive || !lyrics.isSynced) FontWeight.Bold else FontWeight.SemiBold
-                        val fontSize = if (isActive) 24.sp else 20.sp
-
-                        Text(
-                            text = line.text.ifBlank { "♪" },
-                            color = textColor,
-                            fontSize = fontSize,
-                            fontWeight = fontWeight,
-                            lineHeight = (fontSize.value * 1.3).sp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = lyrics.isSynced && line.timeMs > 0) {
-                                    onSeek(line.timeMs)
-                                }
-                                .padding(vertical = 12.dp),
-                        )
-                    }
+                    },
+                    showControlsHeader = true,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Aucune parole disponible",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 16.sp,
+                    )
                 }
             }
         }

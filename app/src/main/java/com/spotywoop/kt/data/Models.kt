@@ -52,6 +52,18 @@ data class UserPlaylist(
     val tracks: List<TrackResult> = emptyList(),
 )
 
+/** Album ou playlist téléchargé en entier. [key] : « album:ref », « playlist:ref », « liked » ou « user:id ». */
+data class SavedCollection(
+    val key: String,
+    val kind: String,
+    val ref: String,
+    val title: String,
+    val subtitle: String?,
+    val image: String?,
+    val tracks: List<TrackResult>,
+    val savedAt: Long = System.currentTimeMillis(),
+)
+
 data class DownloadedTrack(
     val track: TrackResult,
     val localAudioPath: String,
@@ -60,3 +72,9 @@ data class DownloadedTrack(
     val fileSize: Long = 0L,
 )
 
+/** Artiste suivi depuis le lecteur, enregistré sur le téléphone. */
+data class FollowedArtist(
+    val name: String,
+    val ref: String,
+    val image: String?,
+)

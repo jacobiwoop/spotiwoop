@@ -18,6 +18,9 @@ import java.util.UUID
  */
 object LocalLibraryStore {
 
+    private const val MAX_SEARCHES = 10
+    private const val MAX_RECENT = 30
+
     private val scope = CoroutineScope(Dispatchers.IO)
     private var file: File? = null
 
@@ -26,6 +29,47 @@ object LocalLibraryStore {
 
     private val _playlists = MutableStateFlow<List<UserPlaylist>>(emptyList())
     val playlists: StateFlow<List<UserPlaylist>> = _playlists.asStateFlow()
+
+    private val _recentSearches = MutableStateFlow<List<String>>(emptyList())
+    val recentSearches: StateFlow<List<String>> = _recentSearches.asStateFlow()
+
+    private val _recentlyPlayed = MutableStateFlow<List<TrackResult>>(emptyList())
+    val recentlyPlayed: StateFlow<List<TrackResult>> = _recentlyPlayed.asStateFlow()
+
+    private val _followedArtists = MutableStateFlow<List<FollowedArtist>>(emptyList())
+    val followedArtists: StateFlow<List<FollowedArtist>> = _followedArtists.asStateFlow()
+
+    fun toggleFollow(artist: FollowedArtist) {
+        val current = _followedArtists.value
+        _followedArtists.value = if (current.any { it.name.equals(artist.name, ignoreCase = true) }) {
+            current.filterNot { it.name.equals(artist.name, ignoreCase = true) }
+        } else {
+            listOf(artist) + current
+        }
+        save()
+    }
+
+    fun pushSearch(term: String) {
+        val t = term.trim()
+        if (t.isEmpty()) return
+        _recentSearches.value = (listOf(t) + _recentSearches.value.filterNot { it.equals(t, ignoreCase = true) }).take(MAX_SEARCHES)
+        save()
+    }
+
+    fun removeSearch(term: String) {
+        _recentSearches.value = _recentSearches.value - term
+        save()
+    }
+
+    fun clearSearches() {
+        _recentSearches.value = emptyList()
+        save()
+    }
+
+    fun pushRecentlyPlayed(track: TrackResult) {
+        _recentlyPlayed.value = (listOf(track) + _recentlyPlayed.value.filterNot { it.id == track.id }).take(MAX_RECENT)
+        save()
+    }
 
     fun init(context: Context) {
         if (file != null) return
@@ -49,6 +93,7 @@ object LocalLibraryStore {
         }
         _likedTracks.value = current
         save()
+        DownloadManager.syncUserCollection("liked", current)
         return nowLiked
     }
 
@@ -71,6 +116,7 @@ object LocalLibraryStore {
         current.removeAll { it.id == playlistId }
         _playlists.value = current
         save()
+        DownloadManager.deleteCollection("user:$playlistId")
     }
 
     fun addTrackToPlaylist(playlistId: String, track: TrackResult): Boolean {
@@ -89,6 +135,7 @@ object LocalLibraryStore {
         current[index] = updatedPl
         _playlists.value = current
         save()
+        DownloadManager.syncUserCollection("user:$playlistId", updatedTracks)
         return true
     }
 
@@ -99,9 +146,10 @@ object LocalLibraryStore {
 
         val pl = current[index]
         val updatedTracks = pl.tracks.filterNot { it.id == trackId }
-        current[index] = pl.copy(tracks = updatedTracks)
+        current[index] = pl.copy(tracks = updatedTracks, cover = updatedTracks.firstOrNull()?.cover)
         _playlists.value = current
         save()
+        DownloadManager.syncUserCollection("user:$playlistId", updatedTracks)
     }
 
     fun getPlaylist(playlistId: String): UserPlaylist? {
@@ -146,6 +194,17 @@ object LocalLibraryStore {
                 )
             }
             _playlists.value = loadedPlaylists
+
+            val followed = root.optJSONArray("followedArtists") ?: JSONArray()
+            _followedArtists.value = (0 until followed.length()).map { i ->
+                followed.getJSONObject(i).let {
+                    FollowedArtist(it.optString("name"), it.optString("ref"), it.optString("image").ifBlank { null })
+                }
+            }
+            val searches = root.optJSONArray("recentSearches") ?: JSONArray()
+            _recentSearches.value = (0 until searches.length()).map { searches.getString(it) }
+            val recent = root.optJSONArray("recentlyPlayed") ?: JSONArray()
+            _recentlyPlayed.value = (0 until recent.length()).map { jsonToTrack(recent.getJSONObject(it)) }
         } catch (e: Exception) {
             android.util.Log.e("LocalLibraryStore", "Erreur chargement bibliothèque: ${e.message}")
         }
@@ -179,8 +238,15 @@ object LocalLibraryStore {
                     plArray.put(pObj)
                 }
                 root.put("playlists", plArray)
+                root.put("followedArtists", JSONArray().apply {
+                    _followedArtists.value.forEach {
+                        put(JSONObject().put("name", it.name).put("ref", it.ref).put("image", it.image ?: ""))
+                    }
+                })
+                root.put("recentSearches", JSONArray(_recentSearches.value))
+                root.put("recentlyPlayed", JSONArray().apply { _recentlyPlayed.value.forEach { put(trackToJson(it)) } })
 
-                target.writeText(root.toString())
+                synchronized(target) { target.writeText(root.toString()) }
             } catch (e: Exception) {
                 android.util.Log.e("LocalLibraryStore", "Erreur sauvegarde bibliothèque: ${e.message}")
             }

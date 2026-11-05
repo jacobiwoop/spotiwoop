@@ -1,5 +1,6 @@
 package com.spotywoop.kt.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.outlined.Album
 import androidx.compose.material.icons.outlined.Delete
@@ -29,18 +31,19 @@ import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.MusicNote
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,9 +51,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,6 +67,7 @@ import com.spotywoop.kt.data.DownloadManager
 import com.spotywoop.kt.data.LocalLibraryStore
 import com.spotywoop.kt.data.TrackResult
 import com.spotywoop.kt.ui.theme.SpotyColors
+import com.spotywoop.kt.ui.theme.SpotyFonts
 
 /**
  * Bottom Sheet modal d'options pour un titre (Menu Trois Points ⋮),
@@ -74,6 +81,8 @@ fun TrackOptionsSheet(
     onStartRadio: ((TrackResult) -> Unit)? = null,
     onNavigateToArtist: ((artistName: String) -> Unit)? = null,
     onNavigateToAlbum: ((albumName: String, artistName: String) -> Unit)? = null,
+    /** Playlist affichée derrière le menu : permet d'en retirer le titre. */
+    playlistId: String? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val likedTracks by LocalLibraryStore.likedTracks.collectAsStateWithLifecycle()
@@ -84,9 +93,8 @@ fun TrackOptionsSheet(
     val downloadingIds by DownloadManager.downloadingIds.collectAsStateWithLifecycle()
     val isDownloading = downloadingIds.contains(track.id)
 
-    var showPlaylistDialog by remember { mutableStateOf(false) }
-    var showNewPlaylistDialog by remember { mutableStateOf(false) }
-    var newPlaylistName by remember { mutableStateOf("") }
+    var pickingPlaylist by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -101,6 +109,15 @@ fun TrackOptionsSheet(
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
+            if (pickingPlaylist) {
+                PlaylistPane(track, onBack = { pickingPlaylist = false }) { name ->
+                    Toast.makeText(context, "Ajouté à $name", Toast.LENGTH_SHORT).show()
+                    onDismiss()
+                }
+                Spacer(Modifier.height(16.dp))
+                return@Column
+            }
+
             // En-tête du titre
             Row(
                 modifier = Modifier
@@ -169,9 +186,21 @@ fun TrackOptionsSheet(
                 icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
                 title = "Ajouter à une playlist",
                 onClick = {
-                    showPlaylistDialog = true
+                    pickingPlaylist = true
                 }
             )
+
+            if (playlistId != null) {
+                OptionRow(
+                    icon = Icons.Rounded.RemoveCircleOutline,
+                    title = "Retirer de cette playlist",
+                    onClick = {
+                        LocalLibraryStore.removeTrackFromPlaylist(playlistId, track.id)
+                        Toast.makeText(context, "Retiré de la playlist", Toast.LENGTH_SHORT).show()
+                        onDismiss()
+                    }
+                )
+            }
 
             // Option 3 : Télécharger
             OptionRow(
@@ -245,99 +274,78 @@ fun TrackOptionsSheet(
             Spacer(Modifier.height(16.dp))
         }
     }
+}
 
-    // Dialogue de choix de playlist
-    if (showPlaylistDialog) {
-        val playlists by LocalLibraryStore.playlists.collectAsStateWithLifecycle()
-        AlertDialog(
-            onDismissRequest = { showPlaylistDialog = false },
-            containerColor = Color(0xFF282828),
-            title = { Text("Ajouter à une playlist", color = Color.White) },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    // Créer une nouvelle playlist
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                showPlaylistDialog = false
-                                showNewPlaylistDialog = true
-                            }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Rounded.Add, contentDescription = null, tint = SpotyColors.SpotifyGreen)
-                        Spacer(Modifier.width(12.dp))
-                        Text("Nouvelle playlist", color = SpotyColors.SpotifyGreen, fontWeight = FontWeight.Bold)
-                    }
+/** Choix d'une playlist ou création, dans le panneau du titre : on ne quitte pas l'écran. */
+@Composable
+private fun PlaylistPane(track: TrackResult, onBack: () -> Unit, onDone: (String) -> Unit) {
+    val playlists by LocalLibraryStore.playlists.collectAsStateWithLifecycle()
+    var naming by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
 
-                    playlists.forEach { pl ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    LocalLibraryStore.addTrackToPlaylist(pl.id, track)
-                                    showPlaylistDialog = false
-                                    onDismiss()
-                                }
-                                .padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(pl.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                            Text("${pl.tracks.size} titres", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showPlaylistDialog = false }) {
-                    Text("Fermer", color = SpotyColors.SpotifyGreen)
-                }
-            }
+    Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = { if (naming) naming = false else onBack() }) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Retour", tint = Color.White)
+        }
+        Spacer(Modifier.width(4.dp))
+        Text(
+            if (naming) "Nouvelle playlist" else "Ajouter à une playlist",
+            color = Color.White, fontSize = 18.sp, fontFamily = SpotyFonts.Display, fontWeight = FontWeight.Bold,
         )
     }
-
-    // Dialogue de création de playlist
-    if (showNewPlaylistDialog) {
-        AlertDialog(
-            onDismissRequest = { showNewPlaylistDialog = false },
-            containerColor = Color(0xFF282828),
-            title = { Text("Nom de la playlist", color = Color.White) },
-            text = {
-                OutlinedTextField(
-                    value = newPlaylistName,
-                    onValueChange = { newPlaylistName = it },
-                    placeholder = { Text("Ma playlist", color = Color.Gray) },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = SpotyColors.SpotifyGreen,
-                    )
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (newPlaylistName.isNotBlank()) {
-                            val pl = LocalLibraryStore.createPlaylist(newPlaylistName)
-                            LocalLibraryStore.addTrackToPlaylist(pl.id, track)
-                            showNewPlaylistDialog = false
-                            newPlaylistName = ""
-                            onDismiss()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = SpotyColors.SpotifyGreen)
-                ) {
-                    Text("Créer et ajouter", color = Color.Black)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showNewPlaylistDialog = false }) {
-                    Text("Annuler", color = Color.White)
-                }
-            }
+    if (naming) {
+        val focus = remember { FocusRequester() }
+        LaunchedEffect(Unit) { focus.requestFocus() }
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            placeholder = { Text("Ma playlist", color = Color.Gray) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedBorderColor = SpotyColors.Accent,
+                cursorColor = SpotyColors.Accent,
+            ),
         )
+        Spacer(Modifier.height(12.dp))
+        Button(
+            onClick = {
+                if (name.isNotBlank()) {
+                    val pl = LocalLibraryStore.createPlaylist(name)
+                    LocalLibraryStore.addTrackToPlaylist(pl.id, track)
+                    onDone(pl.name)
+                }
+            },
+            enabled = name.isNotBlank(),
+            modifier = Modifier.fillMaxWidth().height(46.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = SpotyColors.Accent),
+        ) {
+            Text("Créer et ajouter", color = Color(0xFF111111), fontWeight = FontWeight.Bold)
+        }
+    } else {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { naming = true }.padding(vertical = 10.dp, horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Rounded.Add, contentDescription = null, tint = SpotyColors.Accent, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(16.dp))
+            Text("Nouvelle playlist", color = SpotyColors.Accent, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        }
+        playlists.forEach { pl ->
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable {
+                    LocalLibraryStore.addTrackToPlaylist(pl.id, track)
+                    onDone(pl.name)
+                }.padding(vertical = 12.dp, horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(pl.name, color = Color.White, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Spacer(Modifier.width(12.dp))
+                Text("${pl.tracks.size} titres", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp)
+            }
+        }
     }
 }
 

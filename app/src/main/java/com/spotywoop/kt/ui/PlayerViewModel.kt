@@ -21,6 +21,8 @@ import com.spotywoop.kt.data.LyricsClient
 import com.spotywoop.kt.data.LyricsResult
 import com.spotywoop.kt.data.TrackResult
 import com.spotywoop.kt.data.YouTubeRadioClient
+import com.spotywoop.kt.lyrics.LyricsRepository
+import com.spotywoop.kt.lyrics.LyricsState
 import com.spotywoop.kt.playback.OfflineSkipper
 import com.spotywoop.kt.playback.PlaybackService
 import com.spotywoop.kt.playback.ResolvedStream
@@ -31,6 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -65,6 +68,7 @@ data class PlayerUiState(
     val stream: ResolvedStream? = null,
     val error: String? = null,
     val lyrics: LyricsResult? = null,
+    val richLyrics: LyricsState = LyricsState(),
     val loadingLyrics: Boolean = false,
     val showLyrics: Boolean = false,
     val radioQueue: List<TrackResult> = emptyList(),
@@ -78,6 +82,19 @@ data class PlayerUiState(
 class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow(PlayerUiState())
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            LyricsRepository.state.collect { repoState ->
+                _state.update { it.copy(richLyrics = repoState) }
+            }
+        }
+        viewModelScope.launch {
+            _state.map { it.current }.distinctUntilChangedBy { it?.id }.collect { track ->
+                if (track != null) com.spotywoop.kt.data.LocalLibraryStore.pushRecentlyPlayed(track.toTrackResult())
+            }
+        }
+    }
 
     private var controller: MediaController? = null
     private var pending: (MediaController.() -> Unit)? = null
@@ -419,6 +436,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 stream = current?.let { now -> StreamResolver.resolved.value[now.id] },
                 error = if (trackChanged) null else it.error,
                 lyrics = if (trackChanged) null else it.lyrics,
+                richLyrics = if (trackChanged) LyricsState() else it.richLyrics,
             )
         }
 
@@ -586,7 +604,28 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(showLyrics = !it.showLyrics) }
     }
 
+    private fun extractSpotifyId(trackId: String): String? {
+        return when {
+            trackId.startsWith("sp:") -> trackId.removePrefix("sp:")
+            trackId.startsWith("am:") || trackId.startsWith("yt:") -> null
+            trackId.length == 22 && trackId.all { it.isLetterOrDigit() } -> trackId
+            else -> null
+        }
+    }
+
     private fun loadLyrics(track: NowPlaying) {
+        val spotifyId = extractSpotifyId(track.id)
+
+        // 1. Lance la cascade complète am-lyrics (LyricsRepository)
+        LyricsRepository.fetchLyrics(
+            title = track.title,
+            artist = track.artist,
+            album = track.album,
+            durationMs = track.durationMs.takeIf { it > 0 },
+            spotifyId = spotifyId,
+        )
+
+        // 2. Affichage immédiat : en attendant la cascade, récupération rapide via l'API du site
         viewModelScope.launch {
             _state.update { it.copy(loadingLyrics = true) }
             val res = LyricsClient.fetchLyrics(

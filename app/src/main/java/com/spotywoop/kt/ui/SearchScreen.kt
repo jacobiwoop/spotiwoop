@@ -20,14 +20,19 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.spotywoop.kt.data.ArtistResult
+import com.spotywoop.kt.data.LocalLibraryStore
 import com.spotywoop.kt.data.PlaylistResult
 import com.spotywoop.kt.data.SearchResults
 import com.spotywoop.kt.data.TrackResult
@@ -104,7 +110,13 @@ fun SearchScreen(
             focusRequester = focusRequester,
         )
         val results = state.results
+        val recentSearches by LocalLibraryStore.recentSearches.collectAsStateWithLifecycle()
         when {
+            state.query.isBlank() && recentSearches.isNotEmpty() -> RecentSearches(recentSearches) {
+                keyboard?.hide()
+                focus.clearFocus()
+                vm.selectSuggestion(it)
+            }
             state.showSuggestions && state.suggestions.isNotEmpty() -> SuggestionsList(state.suggestions) {
                 keyboard?.hide()
                 focus.clearFocus()
@@ -301,6 +313,30 @@ private fun BestResult(
         ) {
             Text(label, color = Color(0xFFE5E5E5), fontSize = 12.sp, letterSpacing = 0.7.sp, fontFamily = SpotyFonts.Text, fontWeight = FontWeight.Bold)
         }
+        }
+    }
+}
+
+@Composable
+private fun RecentSearches(searches: List<String>, onSelect: (String) -> Unit) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
+        item(key = "head") {
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Recherches récentes", color = SpotyColors.TextPrimary, fontSize = 16.sp, fontFamily = SpotyFonts.Display, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                TextButton(onClick = LocalLibraryStore::clearSearches) {
+                    Text("Tout effacer", color = SpotyColors.TextSecondary, fontSize = 13.sp, fontFamily = SpotyFonts.Text, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+        items(searches, key = { it }) { term ->
+            Row(Modifier.fillMaxWidth().clickable { onSelect(term) }.padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.History, contentDescription = null, tint = SpotyColors.TextSecondary, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(14.dp))
+                Text(term, color = SpotyColors.TextPrimary, fontSize = 15.sp, fontFamily = SpotyFonts.Text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                IconButton(onClick = { LocalLibraryStore.removeSearch(term) }) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Retirer $term", tint = SpotyColors.TextSecondary, modifier = Modifier.size(20.dp))
+                }
+            }
         }
     }
 }

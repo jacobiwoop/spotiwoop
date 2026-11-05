@@ -90,6 +90,7 @@ class SearchViewModel(private val spotify: SpotifyClient = SpotifyClient()) : Vi
         val query = _state.value.query.trim()
         if (query.isEmpty()) return
         android.util.Log.i("Search", "Recherche : « $query »")
+        com.spotywoop.kt.data.LocalLibraryStore.pushSearch(query)
         _state.update { it.copy(showSuggestions = false, suggestions = emptyList(), tab = SearchTab.All) }
         searchJob?.cancel()
         searchJob = viewModelScope.launch {

@@ -75,6 +75,8 @@ import com.spotywoop.kt.ui.SearchScreen
 import com.spotywoop.kt.ui.SearchViewModel
 import com.spotywoop.kt.ui.SettingsScreen
 import com.spotywoop.kt.ui.TrackOptionsSheet
+import com.spotywoop.kt.ui.UserCollectionNav
+import com.spotywoop.kt.ui.UserCollectionScreen
 import com.spotywoop.kt.ui.theme.SpotyColors
 import com.spotywoop.kt.ui.theme.SpotywoopTheme
 
@@ -91,7 +93,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         StreamResolver.init(applicationContext)
         LocalLibraryStore.init(applicationContext)
+        com.spotywoop.kt.data.OfflineCache.init(applicationContext)
         DownloadManager.init(applicationContext)
+        if (com.spotywoop.kt.playback.OfflineSkipper.isOnline(applicationContext)) {
+            com.spotywoop.kt.data.OfflineCache.saveMissing(DownloadManager.downloads.value.map { it.track })
+        }
         com.spotywoop.kt.data.AppUpdateManager.init(applicationContext)
         com.spotywoop.kt.data.AppUpdateManager.checkForUpdates(silent = true)
         setContent {
@@ -122,6 +128,14 @@ private fun App(
     // Pages artiste / album empilées : « Retour » revient à la précédente (ArtistNav ou CollectionNav).
     val pages = remember { mutableStateListOf<Any>() }
     fun openPage(page: Any) { if (pages.lastOrNull() != page) pages.add(page) }
+    // Page ouverte depuis le lecteur : en revenant en dessous de cette profondeur, le lecteur réapparaît.
+    var playerReturnDepth by rememberSaveable { mutableStateOf(-1) }
+    LaunchedEffect(pages.size) {
+        if (playerReturnDepth >= 0 && pages.size < playerReturnDepth) {
+            playerReturnDepth = -1
+            showPlayer = true
+        }
+    }
     var optionsTrack by remember { mutableStateOf<TrackResult?>(null) }
 
     // Écran affiché, noté dans le journal à chaque changement.
@@ -132,6 +146,7 @@ private fun App(
         else -> when (val p = pages.lastOrNull()) {
             is ArtistNav -> "Artiste ${p.name} [${p.ref}]"
             is CollectionNav -> "${p.kind} ${p.title} [${p.ref}]"
+            is UserCollectionNav -> "Collection ${p.key}"
             else -> "Onglet ${currentTab.label}"
         }
     }
@@ -259,6 +274,16 @@ private fun App(
                             onTrackOptions = { optionsTrack = it },
                             onOpenArtist = { openPage(it) },
                         )
+                        is UserCollectionNav -> UserCollectionScreen(
+                            nav = page,
+                            currentTrackId = state.current?.id,
+                            onBack = { pages.removeAt(pages.lastIndex) },
+                            onPlayTracks = { tracks, index ->
+                                player.playQueue(tracks, index)
+                                showPlayer = true
+                            },
+                            onTrackOptions = { optionsTrack = it },
+                        )
                         is ArtistNav -> ArtistScreen(
                             nav = page,
                             currentTrackId = state.current?.id,
@@ -317,7 +342,9 @@ private fun App(
                                         player.playQueue(tracks, index)
                                         showPlayer = true
                                     },
-                                    onTrackOptions = { optionsTrack = it },
+                                    onOpenCollection = { openPage(it) },
+                                    onOpenDownloads = { currentTab = MainTab.Downloads },
+                                    onOpenArtist = { openPage(it) },
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
@@ -328,6 +355,7 @@ private fun App(
                                         showPlayer = true
                                     },
                                     onTrackOptions = { optionsTrack = it },
+                                    onOpenCollection = { openPage(it) },
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
@@ -348,6 +376,7 @@ private fun App(
             BottomNav(
                 currentTab = currentTab,
                 onTabSelect = {
+                    playerReturnDepth = -1
                     pages.clear()
                     currentTab = it
                 }
@@ -372,6 +401,12 @@ private fun App(
                 onStartRadio = player::startRadioForCurrentTrack,
                 onPlayTrackFromQueue = player::playTrackFromQueue,
                 onOpenOptions = { optionsTrack = it },
+                onOpenArtist = {
+                    openPage(it)
+                    playerReturnDepth = pages.size
+                    showPlayer = false
+                },
+                onPlayTracks = player::playQueue,
             )
         }
 
@@ -401,7 +436,9 @@ private fun App(
                 },
                 onNavigateToAlbum = { albumName, artistName ->
                     openPage(CollectionNav("album", "", albumName, artist = artistName))
-                }
+                },
+                playlistId = (pages.lastOrNull() as? UserCollectionNav)?.key?.removePrefix("user:")
+                    ?.takeIf { !showPlayer && it != "liked" },
             )
         }
     }

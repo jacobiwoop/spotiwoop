@@ -59,7 +59,12 @@ object OnlineResolveSource {
             return ResolvedStream(
                 url = streamUrl,
                 source = "En ligne · ${provider.replaceFirstChar { it.uppercase() }}",
-                quality = if (provider == "audiomack") "$format jusqu'à 256 kbit/s" else "$format 128 kbit/s",
+                // Le serveur ne donne pas le débit : seul celui d'Audiomack et de Waptrick est connu d'avance.
+                quality = when (provider) {
+                    "audiomack" -> "$format jusqu'à 256 kbit/s"
+                    "waptrick" -> "$format 128 kbit/s"
+                    else -> format
+                },
             )
         }
     }

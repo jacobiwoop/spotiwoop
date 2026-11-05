@@ -150,6 +150,8 @@ fun NowPlayingScreen(
     onStartRadio: () -> Unit = {},
     onPlayTrackFromQueue: (TrackResult) -> Unit = {},
     onOpenOptions: ((TrackResult) -> Unit)? = null,
+    onOpenArtist: (ArtistNav) -> Unit = {},
+    onPlayTracks: (List<TrackResult>, Int) -> Unit = { _, _ -> },
 ) {
     val now = state.current ?: return
     val context = LocalContext.current
@@ -179,19 +181,29 @@ fun NowPlayingScreen(
     var showQueueSheet by remember { mutableStateOf(false) }
     var showOptionsMenu by remember { mutableStateOf(false) }
 
-    // 2. Détection de la ligne de parole actuelle (Live Lyric Ticker)
-    val activeIndex by remember(state.lyrics, state.positionMs) {
-        derivedStateOf {
-            val l = state.lyrics ?: return@derivedStateOf -1
-            if (!l.isSynced || l.lines.isEmpty()) -1
-            else l.lines.indexOfLast { it.timeMs <= state.positionMs }
+    // 2. Détection de la ligne de parole actuelle (Live Lyric Ticker) - lit le nouveau modèle en priorité
+    val currentLyricText = remember(state.richLyrics.lyrics, state.lyrics, state.positionMs) {
+        val richLines = state.richLyrics.lyrics
+        if (!richLines.isNullOrEmpty()) {
+            val activeIndices = com.spotywoop.kt.lyrics.ui.findActiveLineIndices(richLines, state.positionMs)
+            if (activeIndices.isNotEmpty()) {
+                val line = richLines[activeIndices[0]]
+                line.text.joinToString("") { it.text }.takeIf { it.isNotBlank() }
+            } else {
+                val lastActive = richLines.indexOfLast { it.timestamp <= state.positionMs }
+                if (lastActive in richLines.indices) {
+                    richLines[lastActive].text.joinToString("") { it.text }.takeIf { it.isNotBlank() }
+                } else null
+            }
+        } else {
+            val lines = state.lyrics?.lines
+            val activeIdx = if (state.lyrics?.isSynced == true && !lines.isNullOrEmpty()) {
+                lines.indexOfLast { it.timeMs <= state.positionMs }
+            } else -1
+            if (lines != null && activeIdx in lines.indices) {
+                lines[activeIdx].text.takeIf { it.isNotBlank() }
+            } else null
         }
-    }
-    val currentLyricText = remember(activeIndex, state.lyrics) {
-        val lines = state.lyrics?.lines
-        if (lines != null && activeIndex in lines.indices) {
-            lines[activeIndex].text.takeIf { it.isNotBlank() }
-        } else null
     }
 
     val isScrolled by remember { derivedStateOf { scrollState.value > 120 } }
@@ -331,13 +343,7 @@ fun NowPlayingScreen(
                         }
                     }
                     Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = now.artist,
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 15.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    ArtistNameLink(artist = now.artist, onOpenArtist = onOpenArtist)
                 }
 
                 IconButton(
@@ -491,8 +497,10 @@ fun NowPlayingScreen(
             // --- CARTE D'APERÇU DES PAROLES (DÉFILABLE) ---
             LyricsCard(
                 lyrics = state.lyrics,
+                richLyrics = state.richLyrics,
                 loading = state.loadingLyrics,
                 currentPositionMs = state.positionMs,
+                isPlaying = state.isPlaying,
                 dominantColor = dominantColor,
                 onSeek = onSeek,
                 onOpenFullScreen = { fullScreenLyricsOpen = true },
@@ -500,8 +508,14 @@ fun NowPlayingScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // --- CARTE À PROPOS DE L'ARTISTE (STYLE SPOTIFY) ---
-            ArtistCard(now = now)
+            PlayerDetails(
+                now = now,
+                queue = state.radioQueue,
+                onOpenArtist = onOpenArtist,
+                onOpenQueue = { showQueueSheet = true },
+                onPlayFromQueue = onPlayTrackFromQueue,
+                onPlayTracks = onPlayTracks,
+            )
 
             Spacer(Modifier.height(40.dp))
         }
@@ -690,7 +704,9 @@ fun NowPlayingScreen(
         if (fullScreenLyricsOpen) {
             FullScreenLyricsDialog(
                 lyrics = state.lyrics,
+                richLyrics = state.richLyrics,
                 currentPositionMs = state.positionMs,
+                isPlaying = state.isPlaying,
                 dominantColor = dominantColor,
                 onClose = { fullScreenLyricsOpen = false },
                 onSeek = onSeek,
@@ -708,57 +724,6 @@ fun NowPlayingScreen(
                 },
                 onStartRadio = onStartRadio,
             )
-        }
-    }
-}
-
-@Composable
-private fun ArtistCard(now: NowPlaying) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF1E1E1E))
-            .padding(20.dp),
-    ) {
-        Column {
-            Text(
-                text = "À propos de l'artiste",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(14.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Cover(now.cover, 54.dp, 27.dp)
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = now.artist,
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = "Artiste vérifié",
-                        color = SpotyColors.TextSecondary,
-                        fontSize = 13.sp,
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .border(1.dp, Color.White.copy(alpha = 0.6f), RoundedCornerShape(50))
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                ) {
-                    Text(
-                        "S'abonner",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
         }
     }
 }

@@ -38,6 +38,8 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -369,6 +371,10 @@ fun WebTrackRow(
     onOptions: () -> Unit,
     rank: Boolean = false,
     change: String = "",
+    coverModel: Any? = track.cover,
+    offline: Boolean = false,
+    failed: Boolean = false,
+    downloading: Boolean = false,
 ) {
     Row(
         Modifier
@@ -393,7 +399,7 @@ fun WebTrackRow(
             Spacer(Modifier.width(10.dp))
         }
         AsyncImage(
-            model = track.cover,
+            model = coverModel,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.size(46.dp).clip(RoundedCornerShape(6.dp)).background(Surface2),
@@ -419,6 +425,11 @@ fun WebTrackRow(
             Spacer(Modifier.height(2.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (rank) Trend(change)
+                when {
+                    failed -> Icon(Icons.Rounded.ErrorOutline, contentDescription = "Échec du téléchargement", tint = SpotyColors.Down, modifier = Modifier.padding(end = 4.dp).size(14.dp))
+                    offline -> Icon(Icons.Rounded.DownloadDone, contentDescription = "Téléchargé", tint = SpotyColors.SpotifyGreen, modifier = Modifier.padding(end = 4.dp).size(14.dp))
+                    downloading -> CircularProgressIndicator(color = SpotyColors.Accent, strokeWidth = 1.5.dp, modifier = Modifier.padding(end = 4.dp).size(12.dp))
+                }
                 Text(track.artists, color = SpotyColors.TextSecondary, fontSize = 13.sp, fontFamily = SpotyFonts.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
