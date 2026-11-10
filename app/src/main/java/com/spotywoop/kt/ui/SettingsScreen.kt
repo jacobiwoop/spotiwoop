@@ -35,11 +35,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.outlined.Translate
+import com.spotywoop.kt.data.AppSettings
+import com.spotywoop.kt.data.TransliterationMode
+
 @Composable
 fun SettingsScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val scrollState = rememberScrollState()
+
     Column(
         modifier
             .background(SpotyColors.Background)
@@ -47,6 +56,7 @@ fun SettingsScreen(
             // L'écran recouvre l'accueil : il absorbe les appuis pour qu'ils ne lancent pas un titre derrière.
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
             .statusBarsPadding()
+            .verticalScroll(scrollState)
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -66,12 +76,15 @@ fun SettingsScreen(
             )
         }
 
+        // --- SECTION TRANSLITTÉRATION (JAPONAIS / ASIATIQUE) ---
+        TransliterationSettingsCard()
+
         // --- SECTION MISE À JOUR (IN-APP UPDATER) ---
         UpdateCard()
 
         LogCard()
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(8.dp))
 
         Column(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
@@ -315,3 +328,86 @@ private fun LogCard() {
         }
     }
 }
+
+/** Carte de réglage de la translittération des titres et artistes japonais / asiatiques */
+@Composable
+private fun TransliterationSettingsCard() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val currentMode by AppSettings.transliterationMode.collectAsStateWithLifecycle()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SpotyColors.Surface, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Translate,
+                contentDescription = null,
+                tint = SpotyColors.SpotifyGreen,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(
+                    "Titres asiatiques & japonais",
+                    color = SpotyColors.TextPrimary,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "Translittération en alphabet latin (Romaji)",
+                    color = SpotyColors.TextSecondary,
+                    fontSize = 12.sp,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        TransliterationMode.values().forEach { mode ->
+            val selected = mode == currentMode
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .selectable(
+                        selected = selected,
+                        onClick = { AppSettings.setTransliterationMode(context, mode) },
+                    )
+                    .padding(vertical = 6.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = selected,
+                    onClick = { AppSettings.setTransliterationMode(context, mode) },
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = SpotyColors.SpotifyGreen,
+                        unselectedColor = SpotyColors.TextMuted,
+                    ),
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = mode.label,
+                        color = if (selected) SpotyColors.SpotifyGreen else SpotyColors.TextPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    )
+                    Text(
+                        text = "Ex : ${mode.example}",
+                        color = SpotyColors.TextSecondary,
+                        fontSize = 11.sp,
+                    )
+                }
+            }
+        }
+    }
+}
+

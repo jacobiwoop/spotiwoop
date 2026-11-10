@@ -60,7 +60,7 @@ internal fun ArtistNameLink(artist: String, onOpenArtist: (ArtistNav) -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     Box {
         Text(
-            text = artist,
+            text = com.spotywoop.kt.data.AppSettings.formatDisplay(artist),
             color = Color.White.copy(alpha = 0.7f),
             fontSize = 15.sp,
             maxLines = 1,
@@ -75,7 +75,7 @@ internal fun ArtistNameLink(artist: String, onOpenArtist: (ArtistNav) -> Unit) {
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             names.forEach { name ->
                 DropdownMenuItem(
-                    text = { Text(name, color = Color.White) },
+                    text = { Text(com.spotywoop.kt.data.AppSettings.formatDisplay(name), color = Color.White) },
                     onClick = {
                         menuOpen = false
                         onOpenArtist(ArtistNav("name:$name", name))

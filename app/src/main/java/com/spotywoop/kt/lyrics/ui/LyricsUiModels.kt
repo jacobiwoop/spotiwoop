@@ -2,6 +2,7 @@ package com.spotywoop.kt.lyrics.ui
 
 import com.spotywoop.kt.lyrics.LyricsLine
 import com.spotywoop.kt.lyrics.Syllable
+import com.spotywoop.kt.playback.SongMatch
 import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.max
@@ -123,6 +124,8 @@ data class LineUiData(
     val isOppositeAgent: Boolean,
     val isRtl: Boolean,
     val isLineSyncedOnly: Boolean,
+    val transliteratedText: String? = null,
+    val bgTransliteratedText: String? = null,
 )
 
 /**
@@ -345,6 +348,25 @@ fun buildLineUiData(line: LyricsLine, index: Int, allLyrics: List<LyricsLine>): 
     val isRtl = isLineRtl(line)
     val lineSyncedOnly = line.isWordSynced == false || line.text.all { it.lineSynced }
 
+    val rawMain = line.text.joinToString("") { it.text }
+    val transliterated = when {
+        !line.romanizedText.isNullOrBlank() -> line.romanizedText
+        SongMatch.containsCjk(rawMain) -> {
+            val rom = SongMatch.transliterate(rawMain).trim()
+            if (!rom.equals(rawMain, ignoreCase = true) && rom.isNotBlank()) rom else null
+        }
+        else -> null
+    }
+
+    val rawBg = line.backgroundText.joinToString("") { it.text }
+    val bgTransliterated = when {
+        SongMatch.containsCjk(rawBg) -> {
+            val rom = SongMatch.transliterate(rawBg).trim()
+            if (!rom.equals(rawBg, ignoreCase = true) && rom.isNotBlank()) rom else null
+        }
+        else -> null
+    }
+
     return LineUiData(
         index = index,
         line = line,
@@ -354,5 +376,7 @@ fun buildLineUiData(line: LyricsLine, index: Int, allLyrics: List<LyricsLine>): 
         isOppositeAgent = isEnd,
         isRtl = isRtl,
         isLineSyncedOnly = lineSyncedOnly,
+        transliteratedText = transliterated,
+        bgTransliteratedText = bgTransliterated,
     )
 }

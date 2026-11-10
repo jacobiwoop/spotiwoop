@@ -247,8 +247,9 @@ private fun CardTitle(title: String, explicit: Boolean, center: Boolean = false)
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (center) Arrangement.Center else Arrangement.Start,
     ) {
+        val displayTitle = com.spotywoop.kt.data.AppSettings.formatDisplay(title)
         Text(
-            title,
+            displayTitle,
             color = SpotyColors.TextPrimary,
             fontSize = 16.sp,
             fontFamily = SpotyFonts.Display,
@@ -267,7 +268,8 @@ private fun CardTitle(title: String, explicit: Boolean, center: Boolean = false)
 
 @Composable
 private fun CardSub(text: String) {
-    Text(text, color = SpotyColors.TextSecondary, fontSize = 14.sp, fontFamily = SpotyFonts.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    val displayText = com.spotywoop.kt.data.AppSettings.formatDisplay(text)
+    Text(displayText, color = SpotyColors.TextSecondary, fontSize = 14.sp, fontFamily = SpotyFonts.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
 /** Vignette de titre : pochette, artiste au-dessus du titre (comme « Titres tendance »). */
@@ -408,7 +410,7 @@ fun WebTrackRow(
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    track.name,
+                    track.displayName,
                     color = if (current) SpotyColors.Accent else SpotyColors.TextPrimary,
                     fontSize = 15.sp,
                     fontFamily = SpotyFonts.Display,
@@ -430,7 +432,7 @@ fun WebTrackRow(
                     offline -> Icon(Icons.Rounded.DownloadDone, contentDescription = "Téléchargé", tint = SpotyColors.SpotifyGreen, modifier = Modifier.padding(end = 4.dp).size(14.dp))
                     downloading -> CircularProgressIndicator(color = SpotyColors.Accent, strokeWidth = 1.5.dp, modifier = Modifier.padding(end = 4.dp).size(12.dp))
                 }
-                Text(track.artists, color = SpotyColors.TextSecondary, fontSize = 13.sp, fontFamily = SpotyFonts.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(track.displayArtists, color = SpotyColors.TextSecondary, fontSize = 13.sp, fontFamily = SpotyFonts.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         IconButton(onClick = onOptions, modifier = Modifier.size(44.dp)) {

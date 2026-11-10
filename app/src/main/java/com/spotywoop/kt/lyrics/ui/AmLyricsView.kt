@@ -69,6 +69,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.spotywoop.kt.data.AppSettings
+import com.spotywoop.kt.data.TransliterationMode
 import com.spotywoop.kt.lyrics.GoogleLyricsService
 import com.spotywoop.kt.lyrics.LyricsContributor
 import com.spotywoop.kt.lyrics.LyricsExport
@@ -113,18 +116,16 @@ fun AmLyricsView(
     val coroutineScope = rememberCoroutineScope()
 
     // Options d'affichage interactives
-    var showRomanization by remember { mutableStateOf(false) }
+    val appTranslitMode by AppSettings.transliterationMode.collectAsStateWithLifecycle()
+    var showRomanization by remember(appTranslitMode) {
+        mutableStateOf(appTranslitMode != TransliterationMode.OFF)
+    }
     var showTranslation by remember { mutableStateOf(false) }
     var translatedLines by remember(lyrics) { mutableStateOf<List<LyricsLine>?>(null) }
-    var romanizedLines by remember(lyrics) { mutableStateOf<List<LyricsLine>?>(null) }
 
-    // Application dynamique de la traduction ou romanisation si demandée
-    val activeLyrics = remember(lyrics, showTranslation, showRomanization, translatedLines, romanizedLines) {
-        when {
-            showTranslation && translatedLines != null -> translatedLines!!
-            showRomanization && romanizedLines != null -> romanizedLines!!
-            else -> lyrics
-        }
+    // Application dynamique de la traduction si demandée
+    val activeLyrics = remember(lyrics, showTranslation, translatedLines) {
+        if (showTranslation && translatedLines != null) translatedLines!! else lyrics
     }
 
     // Prétraitement des lignes et détection des pauses instrumentales
@@ -209,11 +210,6 @@ fun AmLyricsView(
                 showTranslation = showTranslation,
                 onToggleRomanization = {
                     showRomanization = !showRomanization
-                    if (showRomanization && romanizedLines == null) {
-                        coroutineScope.launch {
-                            romanizedLines = GoogleLyricsService.applyRomanization(lyrics)
-                        }
-                    }
                 },
                 onToggleTranslation = {
                     showTranslation = !showTranslation
@@ -285,6 +281,7 @@ fun AmLyricsView(
                                 isUserScrolling = isUserScrolling,
                                 noBlur = noBlur,
                                 reducedMotion = reducedMotion,
+                                showRomanization = showRomanization,
                                 onSeek = onSeek,
                             )
                         }
@@ -320,6 +317,7 @@ private fun LyricsLineRow(
     isUserScrolling: Boolean,
     noBlur: Boolean,
     reducedMotion: Boolean,
+    showRomanization: Boolean,
     onSeek: (Long) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -399,6 +397,16 @@ private fun LyricsLineRow(
                 isOpposite = lineUi.isOppositeAgent,
                 reducedMotion = reducedMotion,
             )
+            if (showRomanization && !lineUi.bgTransliteratedText.isNullOrBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "(${lineUi.bgTransliteratedText})",
+                    color = Color.White.copy(alpha = 0.50f),
+                    fontSize = 12.sp,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = if (lineUi.isOppositeAgent) TextAlign.End else TextAlign.Start,
+                )
+            }
             Spacer(Modifier.height(8.dp))
         }
 
@@ -422,22 +430,43 @@ private fun LyricsLineRow(
             )
         } else {
             // Ligne principale (FlowRow pour retour à la ligne naturel des mots)
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = if (lineUi.isOppositeAgent) Arrangement.End else Arrangement.Start,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            lineUi.mainWords.forEach { word ->
-                LyricsWordItem(
-                    word = word,
-                    clock = clock,
-                    isActiveLine = isActive,
-                    isBackground = false,
-                    fontSize = LyricsUiConstants.FONT_SIZE_BASE_SP.sp,
-                    reducedMotion = reducedMotion,
-                )
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = if (lineUi.isOppositeAgent) Arrangement.End else Arrangement.Start,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                lineUi.mainWords.forEach { word ->
+                    LyricsWordItem(
+                        word = word,
+                        clock = clock,
+                        isActiveLine = isActive,
+                        isBackground = false,
+                        fontSize = LyricsUiConstants.FONT_SIZE_BASE_SP.sp,
+                        reducedMotion = reducedMotion,
+                    )
+                }
             }
         }
+
+        // Sous-titre de translittération en alphabet latin (Romaji)
+        if (showRomanization && !lineUi.transliteratedText.isNullOrBlank()) {
+            Spacer(Modifier.height(4.dp))
+            val subtitleColor by animateColorAsState(
+                targetValue = if (isActive || isUnsynced) Color.White.copy(alpha = 0.82f) else Color.White.copy(alpha = 0.42f),
+                animationSpec = tween(200),
+                label = "subtitle_color",
+            )
+            Text(
+                text = lineUi.transliteratedText,
+                color = subtitleColor,
+                style = TextStyle(
+                    fontSize = (LyricsUiConstants.FONT_SIZE_BASE_SP * 0.52f).sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 0.2.sp,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = if (lineUi.isOppositeAgent) TextAlign.End else TextAlign.Start,
+            )
         }
 
         // Chœurs placés après le chant principal
@@ -450,6 +479,16 @@ private fun LyricsLineRow(
                 isOpposite = lineUi.isOppositeAgent,
                 reducedMotion = reducedMotion,
             )
+            if (showRomanization && !lineUi.bgTransliteratedText.isNullOrBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "(${lineUi.bgTransliteratedText})",
+                    color = Color.White.copy(alpha = 0.50f),
+                    fontSize = 12.sp,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = if (lineUi.isOppositeAgent) TextAlign.End else TextAlign.Start,
+                )
+            }
         }
     }
 }

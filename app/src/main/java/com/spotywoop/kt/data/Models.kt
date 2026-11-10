@@ -9,6 +9,12 @@ data class TrackResult(
     val cover: String?,
     val isExplicit: Boolean,
 ) {
+    val displayName: String
+        get() = AppSettings.formatDisplay(name)
+
+    val displayArtists: String
+        get() = AppSettings.formatDisplay(artists)
+
     val durationLabel: String
         get() {
             val total = durationMs / 1000
@@ -22,13 +28,22 @@ data class AlbumResult(
     val artists: String,
     val cover: String?,
     val year: Int?,
-)
+) {
+    val displayName: String
+        get() = AppSettings.formatDisplay(name)
+
+    val displayArtists: String
+        get() = AppSettings.formatDisplay(artists)
+}
 
 data class ArtistResult(
     val id: String,
     val name: String,
     val cover: String?,
-)
+) {
+    val displayName: String
+        get() = AppSettings.formatDisplay(name)
+}
 
 data class PlaylistResult(
     val id: String,

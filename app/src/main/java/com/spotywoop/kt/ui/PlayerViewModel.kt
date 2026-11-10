@@ -47,7 +47,13 @@ data class NowPlaying(
     val explicit: Boolean,
     /** Durée annoncée par la source (Spotify, Audiomack), 0 si inconnue. */
     val durationMs: Long = 0,
-)
+) {
+    val displayTitle: String
+        get() = com.spotywoop.kt.data.AppSettings.formatDisplay(title)
+
+    val displayArtist: String
+        get() = com.spotywoop.kt.data.AppSettings.formatDisplay(artist)
+}
 
 enum class PlaybackMode {
     NORMAL,

@@ -213,11 +213,11 @@ fun MiniPlayer(
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        now.title, color = SpotyColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                        now.displayTitle, color = SpotyColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                         maxLines = 1, overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        state.error ?: now.artist,
+                        state.error ?: now.displayArtist,
                         color = if (state.error != null) SpotyColors.Explicit else SpotyColors.TextSecondary,
                         fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
@@ -417,7 +417,7 @@ fun NowPlayingScreen(
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = now.title,
+                            text = now.displayTitle,
                             color = Color.White,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,

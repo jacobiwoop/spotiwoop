@@ -98,6 +98,7 @@ class MainActivity : ComponentActivity() {
         if (com.spotywoop.kt.playback.OfflineSkipper.isOnline(applicationContext)) {
             com.spotywoop.kt.data.OfflineCache.saveMissing(DownloadManager.downloads.value.map { it.track })
         }
+        com.spotywoop.kt.data.AppSettings.init(applicationContext)
         com.spotywoop.kt.data.AppUpdateManager.init(applicationContext)
         com.spotywoop.kt.data.AppUpdateManager.checkForUpdates(silent = true)
         setContent {
