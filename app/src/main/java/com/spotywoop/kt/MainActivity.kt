@@ -370,6 +370,7 @@ private fun App(
                 onOpen = { showPlayer = true },
                 onTogglePlay = player::togglePlay,
                 onNext = player::next,
+                onStop = player::stop,
             )
 
             // Barre de navigation inférieure façon Spotify

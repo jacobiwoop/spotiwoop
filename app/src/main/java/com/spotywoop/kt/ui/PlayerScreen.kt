@@ -3,11 +3,14 @@ package com.spotywoop.kt.ui
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import android.widget.Toast
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,17 +20,20 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -55,6 +61,7 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -75,6 +82,7 @@ import com.spotywoop.kt.data.TrackResult
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,49 +97,137 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.spotywoop.kt.ui.theme.ColorExtractor
 import com.spotywoop.kt.ui.theme.SpotyColors
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
-fun MiniPlayer(state: PlayerUiState, onOpen: () -> Unit, onTogglePlay: () -> Unit, onNext: () -> Unit) {
+fun MiniPlayer(
+    state: PlayerUiState,
+    onOpen: () -> Unit,
+    onTogglePlay: () -> Unit,
+    onNext: () -> Unit,
+    onStop: () -> Unit = {},
+) {
     val now = state.current ?: return
     val progress = if (state.durationMs > 0) state.positionMs.toFloat() / state.durationMs else 0f
-    Column(
+    val coroutineScope = rememberCoroutineScope()
+    val offsetX = remember { Animatable(0f) }
+    var containerWidthPx by remember { mutableFloatStateOf(1f) }
+
+    LaunchedEffect(now.id) {
+        offsetX.snapTo(0f)
+    }
+
+    Box(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 6.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(SpotyColors.SurfaceHigh)
-            .border(1.dp, SpotyColors.Border, RoundedCornerShape(10.dp))
-            .clickable(onClick = onOpen),
+            .onSizeChanged { containerWidthPx = it.width.toFloat() },
     ) {
-        Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Cover(now.cover, 44.dp, 6.dp)
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text(now.title, color = SpotyColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    state.error ?: now.artist,
-                    color = if (state.error != null) SpotyColors.Explicit else SpotyColors.TextSecondary,
-                    fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        // 1. Bouton carré rouge (Stop ■) en arrière-plan à gauche
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(68.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFE53935))
+                    .clickable {
+                        coroutineScope.launch {
+                            offsetX.animateTo(containerWidthPx, tween(200))
+                            onStop()
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Stop,
+                    contentDescription = "Arrêter la musique",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp),
                 )
             }
-            PlayPauseIcon(state, size = 40.dp, iconSize = 24.dp, filled = false, onClick = onTogglePlay)
-            IconButton(Icons.Rounded.SkipNext, enabled = state.hasNext, size = 40.dp, onClick = onNext)
         }
-        Box(Modifier.fillMaxWidth().height(2.dp).background(SpotyColors.Border)) {
-            Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(2.dp).background(SpotyColors.Gold))
+
+        // 2. Carte du MiniPlayer glissante vers la droite
+        Column(
+            Modifier
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(SpotyColors.SurfaceHigh)
+                .border(1.dp, SpotyColors.Border, RoundedCornerShape(10.dp))
+                .pointerInput(now.id) {
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { _, dragAmount ->
+                            val newOffset = (offsetX.value + dragAmount).coerceAtLeast(0f)
+                            coroutineScope.launch {
+                                offsetX.snapTo(newOffset)
+                            }
+                        },
+                        onDragEnd = {
+                            val threshold = containerWidthPx * 0.35f
+                            coroutineScope.launch {
+                                if (offsetX.value > threshold) {
+                                    offsetX.animateTo(containerWidthPx, tween(200))
+                                    onStop()
+                                } else {
+                                    offsetX.animateTo(
+                                        0f,
+                                        spring(
+                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                            stiffness = Spring.StiffnessMediumLow,
+                                        ),
+                                    )
+                                }
+                            }
+                        },
+                        onDragCancel = {
+                            coroutineScope.launch { offsetX.animateTo(0f) }
+                        },
+                    )
+                }
+                .clickable(onClick = onOpen),
+        ) {
+            Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Cover(now.cover, 44.dp, 6.dp)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        now.title, color = SpotyColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        state.error ?: now.artist,
+                        color = if (state.error != null) SpotyColors.Explicit else SpotyColors.TextSecondary,
+                        fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                PlayPauseIcon(state, size = 40.dp, iconSize = 24.dp, filled = false, onClick = onTogglePlay)
+                IconButton(Icons.Rounded.SkipNext, enabled = state.hasNext, size = 40.dp, onClick = onNext)
+            }
+            Box(Modifier.fillMaxWidth().height(2.dp).background(SpotyColors.Border)) {
+                Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(2.dp).background(SpotyColors.Gold))
+            }
         }
     }
 }

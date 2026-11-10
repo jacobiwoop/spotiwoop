@@ -24,6 +24,14 @@ class LocalSourcesTest {
     }
 
     @Test
+    fun sameRecordingMatchesJapaneseAndCjkSubtitles() {
+        val kuwoTitle = "ブルーバード-《火影忍者疾风传》TV动画第274-297集片头曲"
+        val kuwoArtist = "いきものがかり"
+        assertTrue("Blue Bird CJK refusé", SongMatch.sameRecording(kuwoTitle, kuwoArtist, "Ikimonogakari", "ブルーバード"))
+        assertFalse("Instrumental accepté", SongMatch.sameRecording("ブルーバード (Instrumental)", kuwoArtist, "Ikimonogakari", "ブルーバード"))
+    }
+
+    @Test
     fun kuwoQualityFollowsEachSongsList() {
         fun q(vararg t: Pair<String, String>) = t.map { KuwoSource.Quality(it.first, it.second) }
         assertEquals("4", KuwoSource.bestQuality(q("2000" to "flac", "192" to "ogg", "100" to "ogg", "320" to "mp3", "128" to "mp3")))

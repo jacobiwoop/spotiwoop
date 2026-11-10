@@ -283,6 +283,25 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         if (isPlaying) pause() else play()
     }
 
+    fun stop() {
+        logAction("Arrêt complet (stop)")
+        withController {
+            stop()
+            clearMediaItems()
+        }
+        _state.update {
+            it.copy(
+                current = null,
+                isPlaying = false,
+                buffering = false,
+                radioQueue = emptyList(),
+                isRadioActive = false,
+                isAutoRadio = false,
+                error = null,
+            )
+        }
+    }
+
     fun next() = withController {
         logAction("Suivant (titre ${currentMediaItemIndex + 1}/$mediaItemCount)")
         if (hasNextMediaItem()) {
