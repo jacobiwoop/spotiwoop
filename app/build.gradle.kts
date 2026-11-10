@@ -18,8 +18,8 @@ android {
         applicationId = "com.spotywoop.kt"
         minSdk = 26
         targetSdk = 36
-        versionCode = 21
-        versionName = "0.2.10"
+        versionCode = 22
+        versionName = "0.2.11"
 
         buildConfigField(
             "String", "ONLINE_RESOLVE_URL",
@@ -99,10 +99,9 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.androidx.palette)
 
-    // yt-dlp natif sur Android (moteur Seal)
+    // yt-dlp natif sur Android (moteur Seal) : extraction d'URL sans transcodage, ffmpeg non nécessaire
     val youtubedlVersion = "0.18.1"
     implementation("io.github.junkfood02.youtubedl-android:library:$youtubedlVersion")
-    implementation("io.github.junkfood02.youtubedl-android:ffmpeg:$youtubedlVersion")
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 
