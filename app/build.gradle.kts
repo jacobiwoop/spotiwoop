@@ -18,8 +18,8 @@ android {
         applicationId = "com.spotywoop.kt"
         minSdk = 26
         targetSdk = 36
-        versionCode = 20
-        versionName = "0.2.9"
+        versionCode = 21
+        versionName = "0.2.10"
 
         buildConfigField(
             "String", "ONLINE_RESOLVE_URL",
@@ -32,8 +32,8 @@ android {
         abi {
             isEnable = true
             reset()
-            include("arm64-v8a", "x86_64")
-            isUniversalApk = false
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            isUniversalApk = true
         }
     }
 

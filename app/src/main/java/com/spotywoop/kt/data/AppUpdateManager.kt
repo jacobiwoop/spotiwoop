@@ -325,6 +325,10 @@ object AppUpdateManager {
             if (match != null) return match
         }
 
+        // Si aucun ABI spécifique n'est trouvé, privilégier l'APK universel compatible tous téléphones
+        val universal = list.find { it.name.contains("universal", ignoreCase = true) }
+        if (universal != null) return universal
+
         return list.firstOrNull()
     }
 

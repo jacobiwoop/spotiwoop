@@ -131,7 +131,21 @@ object SongMatch {
 
     private val icuTransliterator: Any? by lazy {
         try {
-            android.icu.text.Transliterator.getInstance("Any-Latin; Latin-ASCII")
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                val clazz = Class.forName("android.icu.text.Transliterator")
+                val method = clazz.getMethod("getInstance", String::class.java)
+                method.invoke(null, "Any-Latin; Latin-ASCII")
+            } else {
+                null
+            }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private val icuTransliterateMethod by lazy {
+        try {
+            icuTransliterator?.javaClass?.getMethod("transliterate", String::class.java)
         } catch (_: Throwable) {
             null
         }
@@ -139,8 +153,10 @@ object SongMatch {
 
     fun transliterate(s: String): String {
         val pure = transliterateKanaPure(s)
+        val translit = icuTransliterator ?: return pure
+        val method = icuTransliterateMethod ?: return pure
         return try {
-            (icuTransliterator as? android.icu.text.Transliterator)?.transliterate(pure) ?: pure
+            (method.invoke(translit, pure) as? String) ?: pure
         } catch (_: Throwable) {
             pure
         }
